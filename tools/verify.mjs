@@ -302,11 +302,37 @@ await sleep(2600);
 const bones = () => page.evaluate(() => window.__nazorin.bones.boneCount(window.__nazorin.dig));
 const rules = await page.evaluate(() => ({ REPS: window.__nazorin.REPS, SET: window.__nazorin.SET }));
 
-// 自由に1字書いただけでは ホネはもらえない（表から選んだとき）
-await page.evaluate(() => window.__nazorin.setKana("hira"));
+// カタカナ表から選ぶ通常練習も、同じ字を3回書いたら自動で次の字へ進む
+await page.evaluate(() => {
+  const N = window.__nazorin;
+  N.show(N.el.home);
+  N.setKana("kata");
+  N.setCategory("seion");
+});
+await page.evaluate(() => [...document.querySelectorAll("#grid .cell")].find(b => b.textContent === "ア").click());
+await sleep(350);
 const free0 = await bones();
-await traceChar(page, "か", { jitter: 3 });
-check("表から選んで1字書いても ホネはもらえない", (await bones()) === free0, `${free0} → ${await bones()}`);
+const practiceSteps = [];
+for (let rep = 0; rep < rules.REPS; rep++){
+  const n = await page.evaluate(() => window.__nazorin.tracer.strokes.length);
+  for (let i = 0; i < n; i++) await traceStroke(page, i, { jitter: 3 });
+  await sleep(1900);
+  practiceSteps.push(await page.evaluate(() => ({
+    ch: window.__nazorin.char,
+    rep: window.__nazorin.session?.rep,
+    mode: window.__nazorin.session?.mode,
+    nextHidden: document.querySelector("#btn-next").classList.contains("is-hidden")
+  })));
+}
+check("カタカナ通常練習は アを3回書いてから自動でイへ進む",
+  practiceSteps[0].ch === "ア" && practiceSteps[0].rep === 1 &&
+  practiceSteps[1].ch === "ア" && practiceSteps[1].rep === 2 &&
+  practiceSteps[2].ch === "イ" && practiceSteps[2].rep === 0 &&
+  practiceSteps.every(s => s.mode === "practice" && s.nextHidden),
+  practiceSteps.map(s => `${s.ch}:${s.rep}`).join(" → "));
+check("通常練習を続けても ホネはもらえない", (await bones()) === free0, `${free0} → ${await bones()}`);
+await page.click("#btn-back"); await sleep(250);
+await page.evaluate(() => window.__nazorin.setKana("hira"));
 
 // セットを1つ走りきると ホネが1個
 const b0 = await bones();
@@ -350,9 +376,10 @@ const skip = await page.evaluate(() => {
 check("れんしゅう中は「つぎ」で飛ばせない", skip.hidden && !skip.shown, JSON.stringify(skip));
 await page.evaluate(() => document.querySelector("#btn-back").click());
 await sleep(300);
-check("じゆうに書くときは「つぎ」が出る",
-  await page.evaluate(() => { window.__nazorin.openChar("た");
-    return !document.querySelector("#btn-next").classList.contains("is-hidden"); }));
+check("通常練習でも「つぎ」は隠れ、3回後に自動で進む",
+  await page.evaluate(() => { window.__nazorin.startPractice("た");
+    return document.querySelector("#btn-next").classList.contains("is-hidden") &&
+      window.__nazorin.session.mode === "practice"; }));
 await page.evaluate(() => document.querySelector("#btn-back").click());
 await sleep(200);
 await shot(page, "14_set_done.png");

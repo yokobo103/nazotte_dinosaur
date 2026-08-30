@@ -125,8 +125,9 @@ function renderGrid(){
     b.textContent = ch;
     if (got(ch)) b.dataset.stars = starStr(ch);
     b.setAttribute("aria-label", readingOf(ch));
-    // 表から選ぶのは自由れんしゅう。ホネは「れんしゅう スタート」でしかもらえない
-    b.addEventListener("click", ()=>{ sfx.unlock(); sfx.pop(); session = null; openChar(ch); });
+    // 表から選ぶ通常練習も、同じ字を3回書いたら自動で次の字へ進む。
+    // ホネだけは「たんけんに でる」の5文字セットで受け取る。
+    b.addEventListener("click", ()=>{ sfx.unlock(); sfx.pop(); startPractice(ch); });
     el.grid.appendChild(b);
   }
   const list = SETS[curKana][curSet].filter(Boolean);
@@ -191,7 +192,17 @@ function startSession(){
   const chars = pickChars();
   if (!chars.length) return;
   // 開始時の文字種・分類を固定する。終了記録もこの値を使い、ひらがなとカタカナで同じルールにする。
-  session = { chars, i: 0, rep: 0, attempts: {}, kana: curKana, set: curSet };
+  session = { mode: "mission", chars, i: 0, rep: 0, attempts: {}, kana: curKana, set: curSet };
+  openChar(chars[0]);
+}
+
+/** 文字表から始める通常練習。選んだ字から表の順に、各字3回ずつ自動で進む。 */
+function startPractice(ch){
+  const list = SETS[curKana][curSet].filter(Boolean);
+  const at = list.indexOf(ch);
+  if (at < 0) return;
+  const chars = [...list.slice(at), ...list.slice(0, at)];
+  session = { mode: "practice", chars, i: 0, rep: 0, attempts: {}, kana: curKana, set: curSet };
   openChar(chars[0]);
 }
 $("#btn-start").addEventListener("click", ()=>{ sfx.unlock(); sfx.pop(); startSession(); });
@@ -202,6 +213,13 @@ function renderSess(){
   if (!session){ el.sess.classList.remove("is-on"); el.sess.innerHTML = ""; return; }
   el.sess.classList.add("is-on");
   const left = REPS - session.rep;
+  if (session.mode === "practice"){
+    const next = session.chars[(session.i + 1) % session.chars.length];
+    el.sess.innerHTML =
+      `<span class="dots"><b>${"●".repeat(session.rep)}</b>${"○".repeat(REPS - session.rep)}</span>` +
+      `<span class="sess-rep">${curChar}を あと ${left}かい　つぎは ${next}</span>`;
+    return;
+  }
   el.sess.innerHTML =
     `<span class="dots"><b>${"●".repeat(session.i)}</b>${"○".repeat(session.chars.length - session.i)}</span>` +
     `<span class="sess-rep">${session.i + 1}/${session.chars.length}　あと ${left}かい</span>`;
@@ -251,6 +269,11 @@ function advance(){
   session.rep += 1;
   if (session.rep < REPS){ renderSess(); tracer.reset(); return; }
   session.rep = 0;
+  if (session.mode === "practice"){
+    session.i = (session.i + 1) % session.chars.length;
+    openChar(session.chars[session.i]);
+    return;
+  }
   session.i += 1;
   if (session.i < session.chars.length){ openChar(session.chars[session.i]); return; }
   finishSession();
@@ -430,7 +453,7 @@ tracer.on.reject = (res)=>{
 tracer.on.charDone = (avg)=>{
   sfx.charDone();
   const ch  = curChar;
-  if (session){
+  if (session && session.mode === "mission"){
     if (!session.attempts[ch]) session.attempts[ch] = [];
     session.attempts[ch].push({ score: avg, strokes: tracer.snapshot() || [] });
   }
@@ -609,7 +632,7 @@ else if (params.get("demo") === "triceratops-complete"){
 // 開発用フック（ヘッドレス調整ハーネスから触る）
 window.__nazorin = {
   tracer, stamps, dig, handwriting, bones: B, starsOf,
-  openChar, renderGrid, renderDig, popBone, startSession, show, el,
+  openChar, renderGrid, renderDig, popBone, startSession, startPractice, show, el,
   REPS, SET,
   get char(){ return curChar; },
   get session(){ return session; },
