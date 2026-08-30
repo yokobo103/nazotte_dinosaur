@@ -43,9 +43,10 @@ export const DINOS = [
     custom: {}, part: {},
     fact: "つのが3ぼん。かおの うしろに おおきな えりかざりが ある",
     detail: {
-      description: "3ぼんの つのと、おおきな えりかざりが とくちょう。",
-      facts: { diet: null, size: null, period: null, region: null },
-      restorationArt: null
+      description: "3ぼんの つのと、おおきな えりかざりが とくちょう。かたい くちばしで、ひくい ところの しょくぶつを たべていたよ。",
+      facts: { diet: "しょくぶつ", size: "ながさ 約9メートル", period: "はくあき こうき（約6800万〜6600万年前）", region: "アメリカ" },
+      restorationArt: "triceratops_restoration.webp",
+      sourceUrl: "https://www.nhm.ac.uk/discover/dino-directory/triceratops.html"
     }
   },
   {
@@ -53,27 +54,47 @@ export const DINOS = [
     custom: { body: "stego_body" },
     part:   { body: "せなかの いた" },
     fact: "せなかの いたで からだの あつさを ちょうせつ していた かも",
-    detail: { description: null, facts: { diet:null, size:null, period:null, region:null }, restorationArt:null }
+    detail: {
+      description: "せなかに おおきな いたが ならび、しっぽには 4ほんの トゲが あったよ。トゲで てきから みを まもったと かんがえられているよ。",
+      facts: { diet:"しょくぶつ", size:"ながさ 約9メートル", period:"ジュラき こうき（約1億5200万〜1億4500万年前）", region:"アメリカ" },
+      restorationArt:"stegosaurus_restoration.webp",
+      sourceUrl:"https://www.nhm.ac.uk/discover/dino-directory/Stegosaurus.html"
+    }
   },
   {
     id: "ankylosaurus", name: "アンキロサウルス", lineage: "quad",
     custom: { tail: "anky_tail" },
     part:   { tail: "ハンマーの しっぽ" },
     fact: "しっぽの さきが ハンマー。てきを たたいて みを まもった",
-    detail: { description: null, facts: { diet:null, size:null, period:null, region:null }, restorationArt:null }
+    detail: {
+      description: "からだを かたい よろいのような ホネで まもっていたよ。おもい しっぽの ハンマーは、てきから みを まもるのに つかったと かんがえられているよ。",
+      facts: { diet:"しょくぶつ", size:"ながさ 約8メートル", period:"はくあき こうき（約6800万〜6600万年前）", region:"カナダ・アメリカ" },
+      restorationArt:"ankylosaurus_restoration.webp",
+      sourceUrl:"https://www.nhm.ac.uk/discover/dino-directory/ankylosaurus.html"
+    }
   },
   {
     id: "iguanodon", name: "イグアノドン", lineage: "quad",
     custom: { forelimb: "iguano_fore" },
     part:   { forelimb: "おやゆびの トゲ" },
     fact: "おやゆびの トゲ。むかしは はなの つの と まちがえられていた",
-    detail: { description: null, facts: { diet:null, size:null, period:null, region:null }, restorationArt:null }
+    detail: {
+      description: "まえあしの おやゆびに、おおきな トゲが あったよ。4ほんあしでも 2ほんあしでも あるけたと かんがえられているよ。",
+      facts: { diet:"しょくぶつ", size:"ながさ 約10メートル", period:"はくあき ぜんき（約1億4000万〜1億1000万年前）", region:"ベルギー・イギリス" },
+      restorationArt:"iguanodon_restoration.webp",
+      sourceUrl:"https://www.nhm.ac.uk/discover/dino-directory/Iguanodon.html"
+    }
   },
   {
     id: "brachiosaurus", name: "ブラキオサウルス", lineage: "quad",
     custom: {}, part: {},
     fact: "くびが とても ながい。まえあしが うしろあしより ながい",
-    detail: { description: null, facts: { diet:null, size:null, period:null, region:null }, restorationArt:null }
+    detail: {
+      description: "とても ながい くびと、うしろあしより ながい まえあしを もっていたよ。たかい きの はっぱを たべるのが とくいだったよ。",
+      facts: { diet:"しょくぶつ", size:"ながさ 約22メートル", period:"ジュラき こうき（約1億5200万〜1億4500万年前）", region:"アメリカ" },
+      restorationArt:"brachiosaurus_restoration.webp",
+      sourceUrl:"https://www.nhm.ac.uk/discover/dino-directory/brachiosaurus.html"
+    }
   }
 ];
 

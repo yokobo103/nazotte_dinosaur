@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "presentationContract": {
+    "cameraView": "three-quarter",
+    "mount": "none",
+    "depthRole": "background",
+    "semanticRole": "scenery",
+    "gameplaySignal": "none",
+    "anchor": "image-center"
+  },
+  "assets": {
+    "triceratops_restoration.webp": { "dinosaurId": "triceratops", "sourceType": "ai-generated restoration" },
+    "stegosaurus_restoration.webp": { "dinosaurId": "stegosaurus", "sourceType": "ai-generated restoration" },
+    "ankylosaurus_restoration.webp": { "dinosaurId": "ankylosaurus", "sourceType": "ai-generated restoration" },
+    "iguanodon_restoration.webp": { "dinosaurId": "iguanodon", "sourceType": "ai-generated restoration" },
+    "brachiosaurus_restoration.webp": { "dinosaurId": "brachiosaurus", "sourceType": "ai-generated restoration" }
+  }
+}

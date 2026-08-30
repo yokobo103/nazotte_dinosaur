@@ -466,12 +466,14 @@ check("詳細ページでは全身骨格が最初に見える", detailBone.bone 
 await page.click("#detail-tab-life"); await sleep(180);
 const detailLife = await page.evaluate(() => ({
   selected: document.querySelector("#detail-tab-life").getAttribute("aria-selected"),
-  pending: document.querySelector("#dino-detail-art").textContent,
-  hiddenSilhouette: !document.querySelector("#dino-detail-art img")
+  image: document.querySelector("#dino-detail-art img")?.getAttribute("src") || "",
+  facts: document.querySelectorAll("#dino-detail-facts dd").length,
+  source: document.querySelector("#dino-detail-source")?.href || ""
 }));
 check("骨格と復元表示を切り替えられる",
-  detailLife.selected === "true" && detailLife.pending.includes("じゅんびちゅう"));
-check("復元画が無いとき架空画像やシルエットを出さない", detailLife.hiddenSilhouette === true);
+  detailLife.selected === "true" && detailLife.image.endsWith("stegosaurus_restoration.webp"));
+check("説明・基本情報・出典が恐竜データから表示される",
+  detailLife.facts === 4 && detailLife.source.includes("nhm.ac.uk"), JSON.stringify(detailLife));
 await shot(page, "16_dino_detail.png");
 
 await page.reload({ waitUntil:"networkidle0" }); await sleep(300);
@@ -571,6 +573,17 @@ const webpAssets = await page.evaluate(async () => {
 check("配信用の骨画像は WebPでそろっている",
   webpAssets.files.length === 8 && webpAssets.files.every(f => f.endsWith(".webp")) && webpAssets.failed.length === 0,
   `${webpAssets.files.length}枚 / 読込失敗:${webpAssets.failed.join(",") || "なし"}`);
+
+const restorations = await page.evaluate(async () => {
+  const B = await import("/js/bones.js");
+  const files = B.DINOS.map(d => d.detail && d.detail.restorationArt).filter(Boolean);
+  const status = await Promise.all(files.map(async f => ({ f, ok:(await fetch("/assets/dinosaurs/" + f)).ok })));
+  return { files, failed:status.filter(x => !x.ok).map(x => x.f), facts:B.DINOS.map(d => Object.values(d.detail.facts).filter(Boolean).length) };
+});
+check("第1弾5体の復元画は軽量WebPでそろっている",
+  restorations.files.length === 5 && restorations.files.every(f => f.endsWith(".webp")) && restorations.failed.length === 0,
+  `${restorations.files.length}枚 / 読込失敗:${restorations.failed.join(",") || "なし"}`);
+check("第1弾5体に4項目の基本情報がある", restorations.facts.every(n => n === 4), restorations.facts.join(","));
 
 await page.goto(URL.replace(/\/?$/, "/") + "triceratops-complete.html", { waitUntil: "networkidle0" });
 const triDemo = await page.evaluate(() => ({

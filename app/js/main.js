@@ -396,7 +396,9 @@ function dinoCard(dino){
     card.appendChild(art);
     const note = document.createElement("p");
     note.className = "dino-reveal-note";
-    note.textContent = "ほねの すがた　｜　ふくげんイラストは じゅんびちゅう";
+    note.textContent = dino.detail && dino.detail.restorationArt
+      ? "ほねの すがた　｜　いきていた すがたも みられるよ！"
+      : "ほねの すがた　｜　ふくげんイラストは じゅんびちゅう";
     card.appendChild(note);
     const open = document.createElement("button");
     open.className = "dino-open btn primary";
@@ -579,6 +581,9 @@ function renderDinoDetail(view = "bone"){
     row.textContent = "くわしい データは じゅんびちゅう";
     facts.appendChild(row);
   }
+  const source = $("#dino-detail-source");
+  source.hidden = !data.sourceUrl;
+  source.href = data.sourceUrl || "";
   return true;
 }
 
