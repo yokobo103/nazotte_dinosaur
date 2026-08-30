@@ -378,6 +378,28 @@ function slotEl(dino, part, has){
   return slot;
 }
 
+function completePartsEl(dino){
+  const wrap = document.createElement("div");
+  wrap.className = "complete-parts-wrap";
+  const title = document.createElement("p");
+  title.className = "complete-parts-title";
+  title.textContent = "あつめた 5つの ホネ";
+  wrap.appendChild(title);
+  const row = document.createElement("div");
+  row.className = "complete-parts";
+  for (const part of SLOT_ORDER){
+    const item = document.createElement("div");
+    item.className = "complete-part";
+    item.appendChild(boneElement(B.artKey(dino, part), 34));
+    const label = document.createElement("span");
+    label.textContent = B.partName(dino, part);
+    item.appendChild(label);
+    row.appendChild(item);
+  }
+  wrap.appendChild(row);
+  return wrap;
+}
+
 function dinoCard(dino){
   const gotP = B.gotParts(dig, dino);
   const full = B.isComplete(dig, dino);
@@ -400,6 +422,7 @@ function dinoCard(dino){
     art.className = "dino-full";
     art.appendChild(boneElement("full_" + dino.id, 300, dino.name));
     card.appendChild(art);
+    card.appendChild(completePartsEl(dino));
     const note = document.createElement("p");
     note.className = "dino-reveal-note";
     note.textContent = dino.detail && dino.detail.restorationArt

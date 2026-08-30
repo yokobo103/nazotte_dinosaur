@@ -436,6 +436,10 @@ check("5体ぶんならぶ", cards.length === 5, cards.map(c => `${c.name}${c.co
 check("そろった1体だけ 全体像が見える",
   cards.filter(c => c.art).length === 1 && cards[0].art === true,
   cards.filter(c => c.art).map(c => c.name).join(",") || "なし");
+check("完成カードにも集めた5つのパーツが小さく残る",
+  await page.$eval("#dig .page.dino.full", c =>
+    c.querySelectorAll(".complete-part").length === 5 &&
+    c.querySelector(".complete-parts-title").textContent.includes("5つ")));
 check("そろった恐竜が いちばん上に来る", cards[0].name === "ステゴサウルス", cards[0].name);
 check("最初の骨から 恐竜の名前がわかる",
   cards.filter(c => c.count !== "0/5").every(c => c.name !== "？" && c.name !== "なぞの きょうりゅう"),
