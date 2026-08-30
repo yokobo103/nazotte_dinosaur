@@ -18,6 +18,7 @@ const el = {
   home:    $("#screen-home"),
   trace:   $("#screen-trace"),
   digScr:  $("#screen-dig"),
+  dinoScr: $("#screen-dino"),
   grid:    $("#grid"),
   tabs:    $("#tabs"),
   prog:    $("#progress"),
@@ -98,7 +99,7 @@ const starStr = (ch)=> got(ch) ? "★".repeat(starsOf(bestOf(ch) || 1)) : "";
 
 /* ================= 画面きりかえ ================= */
 function show(screen){
-  for (const s of [el.home, el.trace, el.digScr]) s.classList.toggle("is-on", s === screen);
+  for (const s of [el.home, el.trace, el.digScr, el.dinoScr]) s.classList.toggle("is-on", s === screen);
 }
 document.addEventListener("click", (e)=>{
   const b = e.target.closest("[data-go]");
@@ -397,6 +398,12 @@ function dinoCard(dino){
     note.className = "dino-reveal-note";
     note.textContent = "ほねの すがた　｜　ふくげんイラストは じゅんびちゅう";
     card.appendChild(note);
+    const open = document.createElement("button");
+    open.className = "dino-open btn primary";
+    open.textContent = "きょうりゅうを みる →";
+    open.setAttribute("aria-label", `${dino.name}を くわしく みる`);
+    open.addEventListener("click", ()=> openDinoDetail(dino.id));
+    card.appendChild(open);
   } else if (gotP.length){
     const g = document.createElement("div");
     g.className = "dig-grid";
@@ -507,6 +514,114 @@ function handwritingCanvas(sample){
   }
   return cv;
 }
+
+/* ================= きょうりゅう詳細 ================= */
+const FACT_LABELS = {
+  diet: ["🌿", "たべもの"], size: ["📏", "おおきさ"],
+  period: ["🕰️", "くらしていた じだい"], region: ["🌍", "みつかった ところ"]
+};
+let detailDino = null;
+
+function detailUrl(id){
+  const url = new URL(location.href);
+  url.searchParams.delete("c");
+  url.searchParams.set("dino", id);
+  return url.pathname + url.search + url.hash;
+}
+
+function renderDinoDetail(view = "bone"){
+  if (!detailDino || !B.isComplete(dig, detailDino)) return false;
+  const data = detailDino.detail || {};
+  $("#dino-detail-name").textContent = detailDino.name;
+  document.querySelectorAll("[data-detail-view]").forEach(btn => {
+    const on = btn.dataset.detailView === view;
+    btn.classList.toggle("is-on", on);
+    btn.setAttribute("aria-selected", String(on));
+  });
+
+  const art = $("#dino-detail-art");
+  const note = $("#dino-detail-art-note");
+  art.innerHTML = "";
+  if (view === "bone"){
+    art.className = "detail-bone-art";
+    art.appendChild(boneElement("full_" + detailDino.id, 360, detailDino.name));
+    note.textContent = "5つの ホネを あつめて かんせいした ぜんしんこっかく！";
+  } else if (data.restorationArt){
+    art.className = "detail-life-art";
+    const img = new Image();
+    img.src = "assets/dinosaurs/" + data.restorationArt;
+    img.alt = `${detailDino.name}の いきていた すがた`;
+    art.appendChild(img);
+    note.textContent = "いきていたころの すがたを そうぞうして えにしたものだよ。";
+  } else {
+    art.className = "detail-life-empty";
+    const empty = document.createElement("div");
+    empty.innerHTML = "<span>🖼️</span><strong>ふくげんイラスト<br>じゅんびちゅう</strong>";
+    art.appendChild(empty);
+    note.textContent = "イラストが できたら、ここで きりかえて みられるよ。";
+  }
+
+  $("#dino-detail-description").textContent = data.description || detailDino.fact || "くわしい せつめいは じゅんびちゅうです。";
+  const facts = $("#dino-detail-facts");
+  facts.innerHTML = "";
+  for (const [key, [icon, label]] of Object.entries(FACT_LABELS)){
+    const value = data.facts && data.facts[key];
+    if (!value) continue;
+    const row = document.createElement("div");
+    row.innerHTML = `<dt>${icon} ${label}</dt><dd></dd>`;
+    row.querySelector("dd").textContent = value;
+    facts.appendChild(row);
+  }
+  facts.classList.toggle("is-empty", !facts.children.length);
+  if (!facts.children.length){
+    const row = document.createElement("div");
+    row.className = "fact-pending";
+    row.textContent = "くわしい データは じゅんびちゅう";
+    facts.appendChild(row);
+  }
+  return true;
+}
+
+function openDinoDetail(id, { updateHistory = true } = {}){
+  const dino = B.DINOS.find(d => d.id === id);
+  // URLを直接入力しても、未完成なら詳細は絶対に表示しない。
+  if (!dino || !B.isComplete(dig, dino)){
+    detailDino = null;
+    show(el.digScr); renderDig();
+    const url = new URL(location.href);
+    url.searchParams.delete("dino");
+    window.history.replaceState({ screen:"dig" }, "", url.pathname + url.search + url.hash);
+    return false;
+  }
+  detailDino = dino;
+  show(el.dinoScr);
+  renderDinoDetail("bone");
+  if (updateHistory) window.history.pushState({ screen:"dino", dino:id }, "", detailUrl(id));
+  return true;
+}
+
+function closeDinoDetail({ updateHistory = true } = {}){
+  detailDino = null;
+  show(el.digScr); renderDig();
+  if (updateHistory){
+    const url = new URL(location.href);
+    url.searchParams.delete("dino");
+    window.history.replaceState({ screen:"dig" }, "", url.pathname + url.search + url.hash);
+  }
+}
+
+document.querySelector(".detail-tabs").addEventListener("click", e => {
+  const btn = e.target.closest("[data-detail-view]");
+  if (!btn) return;
+  sfx.unlock(); sfx.pop(); renderDinoDetail(btn.dataset.detailView);
+});
+$("#btn-dino-back").addEventListener("click", ()=>{ sfx.pop(); closeDinoDetail(); });
+$("#btn-dino-list").addEventListener("click", ()=>{ sfx.pop(); closeDinoDetail(); });
+window.addEventListener("popstate", ()=>{
+  const id = new URLSearchParams(location.search).get("dino");
+  if (id) openDinoDetail(id, { updateHistory:false });
+  else closeDinoDetail({ updateHistory:false });
+});
 
 function renderHandwriting(samples){
   el.rewardHand.innerHTML = "";
@@ -628,11 +743,13 @@ else if (params.get("demo") === "triceratops-complete"){
   show(el.digScr);
   renderDig();
 }
+else if (params.get("dino")) openDinoDetail(params.get("dino"), { updateHistory:false });
 
 // 開発用フック（ヘッドレス調整ハーネスから触る）
 window.__nazorin = {
   tracer, stamps, dig, handwriting, bones: B, starsOf,
-  openChar, renderGrid, renderDig, popBone, startSession, startPractice, show, el,
+  openChar, renderGrid, renderDig, renderDinoDetail, openDinoDetail, closeDinoDetail,
+  popBone, startSession, startPractice, show, el,
   REPS, SET,
   get char(){ return curChar; },
   get session(){ return session; },

@@ -117,6 +117,43 @@
   <p class="credit" id="dig-note"></p>
 </section>
 
+<!-- ===== きょうりゅう詳細（完成した恐竜だけ開ける） ===== -->
+<section id="screen-dino" class="screen dino-detail-screen" aria-labelledby="dino-detail-name">
+  <header class="topbar">
+    <button id="btn-dino-back" class="mini back" aria-label="ずかんへ もどる">←</button>
+    <div class="book-heading"><span>きょうりゅうを しろう！</span><h2 class="logo" id="dino-detail-name"></h2></div>
+    <span class="detail-complete">★ かんせい</span>
+  </header>
+
+  <main class="dino-detail-scroll">
+    <div class="detail-tabs" role="tablist" aria-label="きょうりゅうの すがた">
+      <button class="detail-tab is-on" id="detail-tab-bone" role="tab" aria-selected="true" data-detail-view="bone">🦴 ほねの すがた</button>
+      <button class="detail-tab" id="detail-tab-life" role="tab" aria-selected="false" data-detail-view="life">🦕 いきていた すがた</button>
+    </div>
+
+    <section class="detail-visual" aria-live="polite">
+      <div id="dino-detail-art"></div>
+      <p id="dino-detail-art-note"></p>
+    </section>
+
+    <section class="detail-about" aria-labelledby="dino-about-title">
+      <span class="eyebrow">こんな きょうりゅう！</span>
+      <h3 id="dino-about-title">きょうりゅうの ひみつ</h3>
+      <p id="dino-detail-description"></p>
+      <dl id="dino-detail-facts" class="detail-facts"></dl>
+    </section>
+
+    <section class="detail-future" aria-label="これから ふえる きろく">
+      <span>🔍 もっと しらべる きろく</span>
+      <p>はっけんした もじや かんせいびなどを、これから ここに ふやせるよ。</p>
+    </section>
+  </main>
+
+  <nav class="nav">
+    <button id="btn-dino-list" class="nav-btn"><span class="nav-icon">🦴</span><span><b>ずかんいちらんへ</b><small>あつめた ホネを みる</small></span><span class="nav-arrow">←</span></button>
+  </nav>
+</section>
+
 <!-- ===== ごほうび ===== -->
 <div id="reward" class="reward">
   <div class="reward-card">

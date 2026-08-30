@@ -41,30 +41,39 @@ export const DINOS = [
   {
     id: "triceratops", name: "トリケラトプス", lineage: "quad",
     custom: {}, part: {},
-    fact: "つのが3ぼん。かおの うしろに おおきな えりかざりが ある"
+    fact: "つのが3ぼん。かおの うしろに おおきな えりかざりが ある",
+    detail: {
+      description: "3ぼんの つのと、おおきな えりかざりが とくちょう。",
+      facts: { diet: null, size: null, period: null, region: null },
+      restorationArt: null
+    }
   },
   {
     id: "stegosaurus", name: "ステゴサウルス", lineage: "quad",
     custom: { body: "stego_body" },
     part:   { body: "せなかの いた" },
-    fact: "せなかの いたで からだの あつさを ちょうせつ していた かも"
+    fact: "せなかの いたで からだの あつさを ちょうせつ していた かも",
+    detail: { description: null, facts: { diet:null, size:null, period:null, region:null }, restorationArt:null }
   },
   {
     id: "ankylosaurus", name: "アンキロサウルス", lineage: "quad",
     custom: { tail: "anky_tail" },
     part:   { tail: "ハンマーの しっぽ" },
-    fact: "しっぽの さきが ハンマー。てきを たたいて みを まもった"
+    fact: "しっぽの さきが ハンマー。てきを たたいて みを まもった",
+    detail: { description: null, facts: { diet:null, size:null, period:null, region:null }, restorationArt:null }
   },
   {
     id: "iguanodon", name: "イグアノドン", lineage: "quad",
     custom: { forelimb: "iguano_fore" },
     part:   { forelimb: "おやゆびの トゲ" },
-    fact: "おやゆびの トゲ。むかしは はなの つの と まちがえられていた"
+    fact: "おやゆびの トゲ。むかしは はなの つの と まちがえられていた",
+    detail: { description: null, facts: { diet:null, size:null, period:null, region:null }, restorationArt:null }
   },
   {
     id: "brachiosaurus", name: "ブラキオサウルス", lineage: "quad",
     custom: {}, part: {},
-    fact: "くびが とても ながい。まえあしが うしろあしより ながい"
+    fact: "くびが とても ながい。まえあしが うしろあしより ながい",
+    detail: { description: null, facts: { diet:null, size:null, period:null, region:null }, restorationArt:null }
   }
 ];
 

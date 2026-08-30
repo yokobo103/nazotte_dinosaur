@@ -440,6 +440,54 @@ check("ホネの合計が出る",
   /^\s*12\s*\/\s*25\s*$/.test(await page.$eval("#dig-total", e => e.textContent)),
   await page.$eval("#dig-total", e => e.textContent));
 await shot(page, "13_zukan.png");
+
+const detailLocks = await page.evaluate(() => ({
+  buttons: document.querySelectorAll("#dig .dino-open").length,
+  incompleteOpen: window.__nazorin.openDinoDetail("ankylosaurus", { updateHistory:false }),
+  detailOn: document.querySelector("#screen-dino").classList.contains("is-on")
+}));
+check("詳細ボタンは完成した恐竜だけに出る", detailLocks.buttons === 1, `${detailLocks.buttons}個`);
+check("未完成恐竜はURLや関数からも詳細を開けない",
+  detailLocks.incompleteOpen === false && detailLocks.detailOn === false, JSON.stringify(detailLocks));
+
+await page.evaluate(() => window.__nazorin.openDinoDetail("stegosaurus"));
+await sleep(300);
+const detailBone = await page.evaluate(() => ({
+  on: document.querySelector("#screen-dino").classList.contains("is-on"),
+  name: document.querySelector("#dino-detail-name").textContent,
+  url: new URLSearchParams(location.search).get("dino"),
+  bone: !!document.querySelector("#dino-detail-art .bone-art"),
+  selected: document.querySelector("#detail-tab-bone").getAttribute("aria-selected")
+}));
+check("完成済み恐竜の詳細ページへ移動できる",
+  detailBone.on && detailBone.name === "ステゴサウルス" && detailBone.url === "stegosaurus",
+  JSON.stringify(detailBone));
+check("詳細ページでは全身骨格が最初に見える", detailBone.bone && detailBone.selected === "true");
+await page.click("#detail-tab-life"); await sleep(180);
+const detailLife = await page.evaluate(() => ({
+  selected: document.querySelector("#detail-tab-life").getAttribute("aria-selected"),
+  pending: document.querySelector("#dino-detail-art").textContent,
+  hiddenSilhouette: !document.querySelector("#dino-detail-art img")
+}));
+check("骨格と復元表示を切り替えられる",
+  detailLife.selected === "true" && detailLife.pending.includes("じゅんびちゅう"));
+check("復元画が無いとき架空画像やシルエットを出さない", detailLife.hiddenSilhouette === true);
+await shot(page, "16_dino_detail.png");
+
+await page.reload({ waitUntil:"networkidle0" }); await sleep(300);
+const detailReload = await page.evaluate(() => ({
+  on: document.querySelector("#screen-dino").classList.contains("is-on"),
+  name: document.querySelector("#dino-detail-name").textContent,
+  complete: window.__nazorin.bones.isComplete(
+    window.__nazorin.dig,
+    window.__nazorin.bones.DINOS.find(d => d.id === "stegosaurus"))
+}));
+check("リロード後も完成状態と詳細ページを維持する",
+  detailReload.on && detailReload.complete && detailReload.name === "ステゴサウルス", JSON.stringify(detailReload));
+await page.click("#btn-dino-back"); await sleep(200);
+check("詳細ページから図鑑一覧へ戻れる",
+  await page.$eval("#screen-dig", e => e.classList.contains("is-on")) &&
+  !new URLSearchParams(await page.evaluate(() => location.search)).has("dino"));
 await page.click('.nav-btn[data-go="home"]'); await sleep(250);
 
 // ルールだけを直接まわす（なぞりを何十回もやらずに済む）

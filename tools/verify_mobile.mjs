@@ -231,6 +231,29 @@ for (const d of DEVICES) {
     digFit.over <= 1 && digFit.cards === 5 && digFit.slot >= 40,
     `はみ出し${digFit.over}px / カード${digFit.cards} / マス幅${digFit.slot.toFixed(0)}px`);
   await page.screenshot({ path: path.join(QA, `${slug}_4_dig.png`) });
+  await page.click("#dig .dino-open");
+  await sleep(300);
+  const detailFit = await page.evaluate(() => {
+    const tabs = [...document.querySelectorAll(".detail-tab")].map(e => e.getBoundingClientRect());
+    const scroll = document.querySelector(".dino-detail-scroll").getBoundingClientRect();
+    const nav = document.querySelector("#screen-dino .nav").getBoundingClientRect();
+    return {
+      on: document.querySelector("#screen-dino").classList.contains("is-on"),
+      over: document.documentElement.scrollWidth - window.innerWidth,
+      tabMin: Math.min(...tabs.map(r => r.height)),
+      scrollTop: scroll.top, scrollBottom: scroll.bottom,
+      navTop: nav.top, navBottom: nav.bottom, vh: window.innerHeight
+    };
+  });
+  check(d.name, "恐竜詳細が縦画面に収まり、指で切り替えられる",
+    detailFit.on && detailFit.over <= 1 && detailFit.tabMin >= 44 &&
+    detailFit.scrollBottom <= detailFit.navTop + 1 && detailFit.navBottom <= detailFit.vh + 1,
+    `はみ出し${detailFit.over}px / タブ${detailFit.tabMin.toFixed(0)}px / 下端${detailFit.navBottom.toFixed(0)}`);
+  await page.click("#detail-tab-life"); await sleep(150);
+  check(d.name, "スマホでも復元表示へ切り替えられる",
+    await page.$eval("#detail-tab-life", e => e.getAttribute("aria-selected") === "true"));
+  await page.screenshot({ path: path.join(QA, `${slug}_5_detail.png`) });
+  await page.click("#btn-dino-list"); await sleep(180);
   await page.evaluate(() => document.querySelector('.nav-btn[data-go="home"]').click());
   await sleep(250);
 
