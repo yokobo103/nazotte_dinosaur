@@ -15,6 +15,18 @@ const OUT  = path.join(APP, "sw.js");
 const SKIP = new Set(["sw.js"]);
 const SKIP_RE = /-complete\.html$/;
 
+// テキストは改行をそろえてから測る。Windowsで作ると CRLF、CIは LF で
+// チェックアウトされるので、そろえないと同じ中身でも版が食い違う
+const TEXT = /\.(js|mjs|css|html|json|webmanifest|svg|txt|md)$/i;
+function read(full){
+  const raw = fs.readFileSync(full);
+  const CR = String.fromCharCode(13);
+  const buf = TEXT.test(full)
+    ? Buffer.from(raw.toString("utf8").split(CR).join(""), "utf8")
+    : raw;
+  return { size: buf.length, hash: crypto.createHash("sha1").update(buf).digest() };
+}
+
 export function scan(){
 const files = [];
 (function walk(dir){
@@ -23,15 +35,14 @@ const files = [];
     if (e.isDirectory()){ walk(full); continue; }
     const rel = path.relative(APP, full).split(path.sep).join("/");
     if (SKIP.has(rel) || SKIP_RE.test(rel)) continue;
-    files.push({ rel, size: fs.statSync(full).size });
+    files.push({ rel, ...read(full) });
   }
 })(APP);
 
 // 版＝中身から作る。ファイル名・大きさ・中身のハッシュをまとめて短くする
 const h = crypto.createHash("sha1");
 for (const f of files){
-  h.update(f.rel).update(String(f.size));
-  h.update(crypto.createHash("sha1").update(fs.readFileSync(path.join(APP, f.rel))).digest());
+  h.update(f.rel).update(String(f.size)).update(f.hash);
 }
 return { files, version: h.digest("hex").slice(0, 10),
          total: files.reduce((n, f) => n + f.size, 0) };
