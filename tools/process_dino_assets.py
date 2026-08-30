@@ -1,6 +1,6 @@
 """Generated dinosaur art -> lightweight production WebP assets.
 
-Sources stay under work/art-src/generated-20260830 (ignored by Git).
+Sources stay under dated work/art-src/generated-* folders (ignored by Git).
 Bone parts become 512px transparent squares; full skeletons keep their
 natural wide aspect ratio.  Restoration art becomes a 768x512 card image.
 """
@@ -10,7 +10,10 @@ from PIL import Image
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = ROOT / "work" / "art-src" / "generated-20260830"
+SOURCES = [
+    ROOT / "work" / "art-src" / "generated-20260830",
+    ROOT / "work" / "art-src" / "generated-20260831",
+]
 BONES = ROOT / "app" / "assets" / "bones"
 DINOSAURS = ROOT / "app" / "assets" / "dinosaurs"
 
@@ -22,8 +25,25 @@ PARTS = [
     "head_stegosaurus",
     "head_brachiosaurus",
     "head_tyrannosaurus",
+    "anky_tail",
+    "iguano_fore",
+    "head_ankylosaurus",
+    "head_iguanodon",
 ]
-FULL = ["full_brachiosaurus", "full_tyrannosaurus"]
+FULL = [
+    "full_brachiosaurus",
+    "full_tyrannosaurus",
+    "full_ankylosaurus",
+    "full_iguanodon",
+]
+
+
+def source_for(name: str) -> Path:
+    for directory in reversed(SOURCES):
+        candidate = directory / f"{name}.png"
+        if candidate.exists():
+            return candidate
+    raise FileNotFoundError(f"Source image not found: {name}.png")
 
 
 def visible_bbox(image: Image.Image):
@@ -82,10 +102,10 @@ if __name__ == "__main__":
     BONES.mkdir(parents=True, exist_ok=True)
     DINOSAURS.mkdir(parents=True, exist_ok=True)
     for name in PARTS:
-        contain_transparent(SOURCE / f"{name}.png", BONES / f"{name}.webp", width=512, square=True)
+        contain_transparent(source_for(name), BONES / f"{name}.webp", width=512, square=True)
     for name in FULL:
-        contain_transparent(SOURCE / f"{name}.png", BONES / f"{name}.webp", width=512, square=False)
+        contain_transparent(source_for(name), BONES / f"{name}.webp", width=512, square=False)
     restoration(
-        SOURCE / "tyrannosaurus_restoration.png",
+        source_for("tyrannosaurus_restoration"),
         DINOSAURS / "tyrannosaurus_restoration.webp",
     )

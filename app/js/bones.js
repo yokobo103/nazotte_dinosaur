@@ -44,7 +44,7 @@ export const DINOS = [
     fact: "つのが3ぼん。かおの うしろに おおきな えりかざりが ある",
     detail: {
       description: "3ぼんの つのと、おおきな えりかざりが とくちょう。かたい くちばしで、ひくい ところの しょくぶつを たべていたよ。",
-      facts: { diet: "しょくぶつ", size: "ながさ 約9メートル", period: "はくあき こうき（約6800万〜6600万年前）", region: "アメリカ" },
+      facts: { diet: "しょくぶつ", size: "ながさ 約9メートル", period: "はくあき こうき（およそ 6800まん〜6600まんねんまえ）", region: "アメリカ" },
       restorationArt: "triceratops_restoration.webp",
       sourceUrl: "https://www.nhm.ac.uk/discover/dino-directory/triceratops.html"
     }
@@ -56,7 +56,7 @@ export const DINOS = [
     fact: "せなかの いたで からだの あつさを ちょうせつ していた かも",
     detail: {
       description: "せなかに おおきな いたが ならび、しっぽには 4ほんの トゲが あったよ。トゲで てきから みを まもったと かんがえられているよ。",
-      facts: { diet:"しょくぶつ", size:"ながさ 約9メートル", period:"ジュラき こうき（約1億5200万〜1億4500万年前）", region:"アメリカ" },
+      facts: { diet:"しょくぶつ", size:"ながさ 約9メートル", period:"じゅらき こうき（およそ 1おく5200まん〜1おく4500まんねんまえ）", region:"アメリカ" },
       restorationArt:"stegosaurus_restoration.webp",
       sourceUrl:"https://www.nhm.ac.uk/discover/dino-directory/Stegosaurus.html"
     }
@@ -68,7 +68,7 @@ export const DINOS = [
     fact: "しっぽの さきが ハンマー。てきを たたいて みを まもった",
     detail: {
       description: "からだを かたい よろいのような ホネで まもっていたよ。おもい しっぽの ハンマーは、てきから みを まもるのに つかったと かんがえられているよ。",
-      facts: { diet:"しょくぶつ", size:"ながさ 約8メートル", period:"はくあき こうき（約6800万〜6600万年前）", region:"カナダ・アメリカ" },
+      facts: { diet:"しょくぶつ", size:"ながさ 約8メートル", period:"はくあき こうき（およそ 6800まん〜6600まんねんまえ）", region:"カナダ・アメリカ" },
       restorationArt:"ankylosaurus_restoration.webp",
       sourceUrl:"https://www.nhm.ac.uk/discover/dino-directory/ankylosaurus.html"
     }
@@ -80,7 +80,7 @@ export const DINOS = [
     fact: "おやゆびの トゲ。むかしは はなの つの と まちがえられていた",
     detail: {
       description: "まえあしの おやゆびに、おおきな トゲが あったよ。4ほんあしでも 2ほんあしでも あるけたと かんがえられているよ。",
-      facts: { diet:"しょくぶつ", size:"ながさ 約10メートル", period:"はくあき ぜんき（約1億4000万〜1億1000万年前）", region:"ベルギー・イギリス" },
+      facts: { diet:"しょくぶつ", size:"ながさ 約10メートル", period:"はくあき ぜんき（およそ 1おく4000まん〜1おく1000まんねんまえ）", region:"ベルギー・イギリス" },
       restorationArt:"iguanodon_restoration.webp",
       sourceUrl:"https://www.nhm.ac.uk/discover/dino-directory/Iguanodon.html"
     }
@@ -91,7 +91,7 @@ export const DINOS = [
     fact: "くびが とても ながい。まえあしが うしろあしより ながい",
     detail: {
       description: "とても ながい くびと、うしろあしより ながい まえあしを もっていたよ。たかい きの はっぱを たべるのが とくいだったよ。",
-      facts: { diet:"しょくぶつ", size:"ながさ 約22メートル", period:"ジュラき こうき（約1億5200万〜1億4500万年前）", region:"アメリカ" },
+      facts: { diet:"しょくぶつ", size:"ながさ 約22メートル", period:"じゅらき こうき（およそ 1おく5200まん〜1おく4500まんねんまえ）", region:"アメリカ" },
       restorationArt:"brachiosaurus_restoration.webp",
       sourceUrl:"https://www.nhm.ac.uk/discover/dino-directory/brachiosaurus.html"
     }
@@ -102,7 +102,7 @@ export const DINOS = [
     fact: "おおきな あたまと つよい うしろあしを もっていた",
     detail: {
       description: "おおきな あたまと するどい は、つよい うしろあしが とくちょう。まえあしは ちいさく、2ぼんの ゆびが あったよ。",
-      facts: { diet:"にく", size:"ながさ 約12メートル", period:"はくあき こうき（約6800万〜6600万年前）", region:"アメリカ・カナダ" },
+      facts: { diet:"にく", size:"ながさ 約12メートル", period:"はくあき こうき（およそ 6800まん〜6600まんねんまえ）", region:"アメリカ・カナダ" },
       restorationArt:"tyrannosaurus_restoration.webp",
       sourceUrl:"https://www.nhm.ac.uk/discover/dino-directory/tyrannosaurus.html"
     }

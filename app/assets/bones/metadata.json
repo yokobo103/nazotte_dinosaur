@@ -14,6 +14,8 @@
   },
   "dinosaurSpecific": {
     "stegosaurus": ["stego_body.webp", "head_stegosaurus.webp", "full_stegosaurus.webp"],
+    "ankylosaurus": ["anky_tail.webp", "head_ankylosaurus.webp", "full_ankylosaurus.webp"],
+    "iguanodon": ["iguano_fore.webp", "head_iguanodon.webp", "full_iguanodon.webp"],
     "brachiosaurus": ["head_brachiosaurus.webp", "full_brachiosaurus.webp"],
     "tyrannosaurus": ["head_tyrannosaurus.webp", "full_tyrannosaurus.webp"]
   }

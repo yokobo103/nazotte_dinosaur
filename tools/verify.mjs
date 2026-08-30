@@ -653,7 +653,7 @@ const webpAssets = await page.evaluate(async () => {
   return { files, failed: status.filter(x => !x.ok).map(x => x.f) };
 });
 check("配信用の骨画像は WebPでそろっている",
-  webpAssets.files.length === 17 && webpAssets.files.every(f => f.endsWith(".webp")) && webpAssets.failed.length === 0,
+  webpAssets.files.length === 23 && webpAssets.files.every(f => f.endsWith(".webp")) && webpAssets.failed.length === 0,
   `${webpAssets.files.length}枚 / 読込失敗:${webpAssets.failed.join(",") || "なし"}`);
 
 const restorations = await page.evaluate(async () => {
@@ -666,6 +666,12 @@ check("6体の復元画は軽量WebPでそろっている",
   restorations.files.length === 6 && restorations.files.every(f => f.endsWith(".webp")) && restorations.failed.length === 0,
   `${restorations.files.length}枚 / 読込失敗:${restorations.failed.join(",") || "なし"}`);
 check("6体に4項目の基本情報がある", restorations.facts.every(n => n === 4), restorations.facts.join(","));
+const periodLabels = await page.evaluate(async () => {
+  const B = await import("/js/bones.js");
+  return B.DINOS.map(d => d.detail.facts.period);
+});
+check("生きていた年代に漢字やカタカナが残っていない",
+  periodLabels.every(label => !/[一-龠々〆ヵヶァ-ヶ]/.test(label)), periodLabels.join(" / "));
 
 await page.goto(URL.replace(/\/?$/, "/") + "triceratops-complete.html", { waitUntil: "networkidle0" });
 const triDemo = await page.evaluate(() => ({
@@ -685,6 +691,8 @@ check("トリケラトプス完成状態の専用ページが開く",
 const addedDinoDemos = [];
 for (const [id, name] of [
   ["stegosaurus", "ステゴサウルス"],
+  ["ankylosaurus", "アンキロサウルス"],
+  ["iguanodon", "イグアノドン"],
   ["brachiosaurus", "ブラキオサウルス"],
   ["tyrannosaurus", "ティラノサウルス"]
 ]) {
@@ -698,7 +706,7 @@ for (const [id, name] of [
     parts: [...document.querySelectorAll("#dig .complete-part img")].map(img => img.getAttribute("src"))
   }), [id, name]));
 }
-check("ステゴ・ブラキオ・ティラノの完成確認ページが開く",
+check("追加5体の完成確認ページが開く",
   addedDinoDemos.every(d => d.name === d.expectedName && d.count === "5/5" &&
     d.full.endsWith(`full_${d.id}.webp`) && d.parts.length === 5 && d.parts.every(Boolean)),
   JSON.stringify(addedDinoDemos));

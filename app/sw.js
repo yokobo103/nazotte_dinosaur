@@ -1,22 +1,28 @@
 // 自動生成。手で編集しない（作り直し: node tools/build_sw.mjs）
 // 電波が無くても開けるように、アプリ一式を先に取っておく。
-const VERSION = "acf080a665";
+const VERSION = "a7d91e8442";
 const CACHE = "nazorin-" + VERSION;
 
 const FILES = [
   "./",
+  "assets/bones/anky_tail.webp",
   "assets/bones/biped_body.webp",
   "assets/bones/biped_fore.webp",
   "assets/bones/biped_hind.webp",
   "assets/bones/biped_tail.webp",
+  "assets/bones/full_ankylosaurus.webp",
   "assets/bones/full_brachiosaurus.webp",
+  "assets/bones/full_iguanodon.webp",
   "assets/bones/full_stegosaurus.webp",
   "assets/bones/full_triceratops.webp",
   "assets/bones/full_tyrannosaurus.webp",
+  "assets/bones/head_ankylosaurus.webp",
   "assets/bones/head_brachiosaurus.webp",
+  "assets/bones/head_iguanodon.webp",
   "assets/bones/head_stegosaurus.webp",
   "assets/bones/head_triceratops.webp",
   "assets/bones/head_tyrannosaurus.webp",
+  "assets/bones/iguano_fore.webp",
   "assets/bones/metadata.json",
   "assets/bones/quad_body.webp",
   "assets/bones/quad_fore.webp",
