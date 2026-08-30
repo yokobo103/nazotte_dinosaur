@@ -139,6 +139,27 @@ for (const d of DEVICES) {
   });
   check(d.name, "ホーム画面に置ける（マニフェスト＋アイコン）", home.ok && home.hasApple, home.why);
 
+  /* --- 発掘ミッションの情報整理 --- */
+  const missionUi = await page.evaluate(() => {
+    const N = window.__nazorin; N.startSession();
+    const buttons = [...document.querySelectorAll("#screen-trace .mini, #screen-trace .btn")]
+      .filter(e => getComputedStyle(e).display !== "none")
+      .map(e => { const r=e.getBoundingClientRect(); return Math.min(r.width,r.height); });
+    return {
+      char: document.querySelector("#trace-char").textContent,
+      example: document.querySelector("#trace-word").textContent,
+      bones: document.querySelector(".bone-dots").textContent.length,
+      hasDigLabel: document.querySelector(".trace-zone").textContent.includes("はっくつ"),
+      minButton: Math.min(...buttons)
+    };
+  });
+  check(d.name, "文字・例・発掘進捗が一目で分かる",
+    missionUi.char && missionUi.example && missionUi.bones === 10 && missionUi.hasDigLabel,
+    `${missionUi.char}/${missionUi.example}/骨${missionUi.bones/2}こ`);
+  check(d.name, "なぞり画面の操作が44px以上", missionUi.minButton >= 44,
+    `いちばん小さい辺 ${missionUi.minButton.toFixed(0)}px`);
+  await page.click("#btn-back"); await sleep(180);
+
   /* --- なぞり画面のおさまり --- */
   await page.evaluate(() => window.__nazorin.openChar("あ"));
   await sleep(350);

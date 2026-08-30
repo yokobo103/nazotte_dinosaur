@@ -19,7 +19,8 @@ const PASS  = { coverage: 0.70, onPath: 0.45, order: 0.50 };
 // 点数の配合。かたち＝手本をなぞれているか / きれいさ＝はみ出していないか
 const W     = { shape: 0.45, neat: 0.35, order: 0.20 };
 
-const PALETTE = ["#ff8a5c","#4ecdc4","#ffc93c","#a78bfa","#5db2ff","#ff7eb6","#7bd88f","#ffa8a8"];
+// 筆跡は発掘装飾と切り離し、全画を読みやすいターコイズで統一する。
+const PALETTE = ["#169d94"];
 
 const dist2 = (ax,ay,bx,by)=> (ax-bx)*(ax-bx) + (ay-by)*(ay-by);
 const dist  = (a,b)=> Math.hypot(a.x-b.x, a.y-b.y);

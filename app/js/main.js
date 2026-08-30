@@ -216,14 +216,18 @@ function renderSess(){
   const left = REPS - session.rep;
   if (session.mode === "practice"){
     const next = session.chars[(session.i + 1) % session.chars.length];
+    el.sess.dataset.mode = "practice";
     el.sess.innerHTML =
-      `<span class="dots"><b>${"●".repeat(session.rep)}</b>${"○".repeat(REPS - session.rep)}</span>` +
-      `<span class="sess-rep">${curChar}を あと ${left}かい　つぎは ${next}</span>`;
+      `<span class="sess-label">れんしゅう ${session.rep + 1}/${REPS}</span>` +
+      `<span class="dots" aria-label="${session.rep}/${REPS}かい"><b>${"●".repeat(session.rep)}</b>${"○".repeat(REPS - session.rep)}</span>` +
+      `<span class="sess-rep">あと ${left}かい <small>つぎは ${next}</small></span>`;
     return;
   }
+  el.sess.dataset.mode = "mission";
   el.sess.innerHTML =
-    `<span class="dots"><b>${"●".repeat(session.i)}</b>${"○".repeat(session.chars.length - session.i)}</span>` +
-    `<span class="sess-rep">${session.i + 1}/${session.chars.length}　あと ${left}かい</span>`;
+    `<span class="sess-label">${session.i + 1}/${session.chars.length}<small>もじ</small></span>` +
+    `<span class="bone-dots" aria-label="${session.i}/${session.chars.length}もじ かんせい"><b>${"🦴".repeat(session.i)}</b><span>${"🦴".repeat(session.chars.length - session.i)}</span></span>` +
+    `<span class="sess-rep">あと ${left}かい<small>5もじで ホネ発見！</small></span>`;
 }
 
 /* ================= なぞり画面 ================= */
@@ -232,7 +236,9 @@ function openChar(ch){
   if (!data) return;
   curChar = ch;
   const w = WORDS[ch] || { w:"", e:"" };
-  el.word.textContent = `${w.e} ${w.w}`;
+  $("#trace-char").textContent = ch;
+  $("#trace-emoji").textContent = w.e;
+  $("#trace-word").textContent = w.w;
   show(el.trace);
   $("#btn-next").classList.remove("is-ready");
   renderSess();

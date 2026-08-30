@@ -76,15 +76,19 @@
 <section id="screen-trace" class="screen">
   <header class="topbar">
     <button id="btn-back" class="mini back" aria-label="もどる">←</button>
-    <div class="trace-title"><span>この もじを なぞろう</span><div class="word" id="word"></div></div>
-    <button id="btn-say" class="mini icon" title="よみあげ">🔊</button>
+    <div class="trace-title"><span class="trace-zone">⛏️ はっくつエリア</span><strong>この もじを なぞろう</strong></div>
+    <button id="btn-say" class="mini icon" title="よみあげ" aria-label="おとを きく">🔊<small>おと</small></button>
   </header>
 
+  <div class="word" id="word" aria-live="polite">
+    <strong id="trace-char" class="trace-char"></strong>
+    <span class="trace-example"><span id="trace-emoji"></span><b id="trace-word"></b></span>
+  </div>
   <div class="sess" id="sess"></div>
 
   <div class="stage">
     <div class="canvas-wrap" aria-label="なぞり書きのマス">
-      <span class="paper-clip" aria-hidden="true"></span>
+      <span class="board-label" aria-hidden="true">もじボード</span>
       <canvas id="canvas"></canvas>
       <div id="praise" class="praise"></div>
     </div>
@@ -93,8 +97,8 @@
   <div id="bone-pop" class="bone-pop"></div>
 
   <div class="controls">
-    <button id="btn-demo" class="btn ghost">▶ おてほん</button>
-    <button id="btn-again" class="btn ghost">↺ かきなおす</button>
+    <button id="btn-demo" class="btn ghost"><span>▶</span> おてほん</button>
+    <button id="btn-again" class="btn ghost"><span>↺</span> かきなおす</button>
     <button id="btn-next" class="btn primary">つぎへ →</button>
   </div>
 </section>

@@ -183,12 +183,22 @@ await page.click('.tab[data-set="seion"]'); await sleep(150);
 const kataSession = await page.evaluate(() => {
   const N = window.__nazorin;
   N.startSession();
-  return { chars: N.session.chars, kana: N.session.kana, set: N.session.set };
+  return {
+    chars: N.session.chars, kana: N.session.kana, set: N.session.set,
+    current: document.querySelector("#trace-char").textContent,
+    example: document.querySelector("#trace-word").textContent,
+    bones: document.querySelector(".bone-dots").textContent.length,
+    progress: document.querySelector("#sess").textContent
+  };
 });
 check("カタカナも同じ5文字・3回ルールで開始する",
   kataSession.chars.length === 5 && kataSession.kana === "kata" && kataSession.set === "seion" &&
   kataSession.chars.every(c => c.codePointAt(0) >= 0x30a1 && c.codePointAt(0) <= 0x30fc),
   `${kataSession.kana}/${kataSession.set}: ${kataSession.chars.join("")}`);
+check("なぞり画面に今の文字・例・5文字の発掘進捗がまとまっている",
+  kataSession.current === kataSession.chars[0] && kataSession.example.length > 0 &&
+  kataSession.bones === 10 && kataSession.progress.includes("5もじで ホネ発見"),
+  `${kataSession.current}/${kataSession.example}/${kataSession.progress}`);
 await page.click("#btn-back"); await sleep(150);
 
 for (const ch of ["ア", "ソ", "ヲ", "ー", "ポ"]) {
@@ -203,6 +213,8 @@ await page.evaluate(() => window.__nazorin.setKana("hira"));
 const neat = await traceChar(page, "あ", { jitter: 0 });
 check("ていねいに書くと完成する", neat.done === true, `${neat.cur}/${neat.total}画`);
 check("自分の筆跡が残っている", neat.inks.every(n => n > 5), `画ごとの点数の数 ${neat.inks.join(",")}`);
+check("実際になぞった線はターコイズ1色で読みやすい",
+  await page.evaluate(() => window.__nazorin.tracer.strokes.every(s => s.color === "#169d94")));
 
 // 保存されているのが「手本の形」ではなく「指が通った道」であること
 await traceChar(page, "あ", { jitter: 9 });
