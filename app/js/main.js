@@ -766,14 +766,15 @@ renderGrid();
 
 const params = new URLSearchParams(location.search);
 const q = params.get("c");
+const demoMatch = params.get("demo")?.match(/^([a-z]+)-complete$/);
+const demoDino = demoMatch && B.DINOS.find(dino => dino.id === demoMatch[1]);
 if (q && KANA[q]) openChar(q);
-else if (params.get("demo") === "triceratops-complete"){
+else if (demoDino){
   // 公開確認用。保存データは書き換えず、このページを開いている間だけ完成状態にする。
   for (const dino of B.DINOS) dig.slots[dino.id] = [];
-  const tri = B.DINOS.find(dino => dino.id === "triceratops");
-  dig.slots.triceratops = B.ALL_PARTS.slice();
+  dig.slots[demoDino.id] = B.ALL_PARTS.slice();
   dig.done.length = 0;
-  dig.done.push(tri.id);
+  dig.done.push(demoDino.id);
   show(el.digScr);
   renderDig();
 }

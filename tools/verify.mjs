@@ -413,7 +413,8 @@ await page.evaluate(() => {
     ankylosaurus:  ["body","forelimb","hindlimb","tail"],
     brachiosaurus: ["body","tail"],
     triceratops:   ["hindlimb"],
-    iguanodon:     []
+    iguanodon:     [],
+    tyrannosaurus: []
   };
   N.dig.done = ["stegosaurus"];
   B.saveDig(N.dig);
@@ -432,7 +433,7 @@ const cards = await page.evaluate(() => [...document.querySelectorAll("#dig .pag
   has:   c.querySelectorAll(".slot.has").length,
   art:   !!c.querySelector(".dino-full")
 })));
-check("5体ぶんならぶ", cards.length === 5, cards.map(c => `${c.name}${c.count}`).join(" "));
+check("6体ぶんならぶ", cards.length === 6, cards.map(c => `${c.name}${c.count}`).join(" "));
 check("そろった1体だけ 全体像が見える",
   cards.filter(c => c.art).length === 1 && cards[0].art === true,
   cards.filter(c => c.art).map(c => c.name).join(",") || "なし");
@@ -453,7 +454,7 @@ check("途中の恐竜は 取ったマスだけ うまっている",
   cards.filter(c => c.slots > 0).every(c => c.has === Number(c.count.split("/")[0])),
   cards.filter(c => c.slots > 0).map(c => `${c.name} ${c.has}/${c.slots}`).join(" "));
 check("ホネの合計が出る",
-  /^\s*12\s*\/\s*25\s*$/.test(await page.$eval("#dig-total", e => e.textContent)),
+  /^\s*12\s*\/\s*30\s*$/.test(await page.$eval("#dig-total", e => e.textContent)),
   await page.$eval("#dig-total", e => e.textContent));
 await shot(page, "13_zukan.png");
 
@@ -530,7 +531,7 @@ const rule = await page.evaluate(() => {
   return { n, dup, headAlwaysLast, done: order.length,
            spread: new Set(firstTen).size, after: B.drawBone(d) };
 });
-check("25こで5体そろう", rule.n === 25 && rule.done === 5, `${rule.n}こ / ${rule.done}体`);
+check("30こで6体そろう", rule.n === 30 && rule.done === 6, `${rule.n}こ / ${rule.done}体`);
 check("ダブりが出ない", rule.dup.length === 0, rule.dup.join(",") || "なし");
 check("あたまは その恐竜の残り4つがそろうまで出ない", rule.headAlwaysLast === true);
 check("いろんな恐竜が同時に進む（1体ずつではない）", rule.spread >= 3,
@@ -587,7 +588,7 @@ const webpAssets = await page.evaluate(async () => {
   return { files, failed: status.filter(x => !x.ok).map(x => x.f) };
 });
 check("配信用の骨画像は WebPでそろっている",
-  webpAssets.files.length === 8 && webpAssets.files.every(f => f.endsWith(".webp")) && webpAssets.failed.length === 0,
+  webpAssets.files.length === 17 && webpAssets.files.every(f => f.endsWith(".webp")) && webpAssets.failed.length === 0,
   `${webpAssets.files.length}枚 / 読込失敗:${webpAssets.failed.join(",") || "なし"}`);
 
 const restorations = await page.evaluate(async () => {
@@ -596,10 +597,10 @@ const restorations = await page.evaluate(async () => {
   const status = await Promise.all(files.map(async f => ({ f, ok:(await fetch("/assets/dinosaurs/" + f)).ok })));
   return { files, failed:status.filter(x => !x.ok).map(x => x.f), facts:B.DINOS.map(d => Object.values(d.detail.facts).filter(Boolean).length) };
 });
-check("第1弾5体の復元画は軽量WebPでそろっている",
-  restorations.files.length === 5 && restorations.files.every(f => f.endsWith(".webp")) && restorations.failed.length === 0,
+check("6体の復元画は軽量WebPでそろっている",
+  restorations.files.length === 6 && restorations.files.every(f => f.endsWith(".webp")) && restorations.failed.length === 0,
   `${restorations.files.length}枚 / 読込失敗:${restorations.failed.join(",") || "なし"}`);
-check("第1弾5体に4項目の基本情報がある", restorations.facts.every(n => n === 4), restorations.facts.join(","));
+check("6体に4項目の基本情報がある", restorations.facts.every(n => n === 4), restorations.facts.join(","));
 
 await page.goto(URL.replace(/\/?$/, "/") + "triceratops-complete.html", { waitUntil: "networkidle0" });
 const triDemo = await page.evaluate(() => ({
@@ -613,8 +614,33 @@ const triDemo = await page.evaluate(() => ({
 }));
 check("トリケラトプス完成状態の専用ページが開く",
   triDemo.demo === "triceratops-complete" && triDemo.digOn && triDemo.name === "トリケラトプス" &&
-  triDemo.count === "5/5" && triDemo.full && /^\s*5\s*\/\s*25\s*$/.test(triDemo.total),
+  triDemo.count === "5/5" && triDemo.full && /^\s*5\s*\/\s*30\s*$/.test(triDemo.total),
   JSON.stringify(triDemo));
+
+const addedDinoDemos = [];
+for (const [id, name] of [
+  ["stegosaurus", "ステゴサウルス"],
+  ["brachiosaurus", "ブラキオサウルス"],
+  ["tyrannosaurus", "ティラノサウルス"]
+]) {
+  await page.goto(URL.replace(/\/?$/, "/") + `${id}-complete.html`, { waitUntil:"networkidle0" });
+  addedDinoDemos.push(await page.evaluate(([expectedId, expectedName]) => ({
+    id: expectedId,
+    name: document.querySelector("#dig .page-title")?.textContent,
+    expectedName,
+    count: document.querySelector("#dig .count")?.textContent,
+    full: document.querySelector("#dig .dino-full img")?.getAttribute("src") || "",
+    parts: [...document.querySelectorAll("#dig .complete-part img")].map(img => img.getAttribute("src"))
+  }), [id, name]));
+}
+check("ステゴ・ブラキオ・ティラノの完成確認ページが開く",
+  addedDinoDemos.every(d => d.name === d.expectedName && d.count === "5/5" &&
+    d.full.endsWith(`full_${d.id}.webp`) && d.parts.length === 5 && d.parts.every(Boolean)),
+  JSON.stringify(addedDinoDemos));
+check("ティラノの4部位は二足恐竜共通セットを使う",
+  ["biped_body.webp", "biped_fore.webp", "biped_hind.webp", "biped_tail.webp"].every(file =>
+    addedDinoDemos.find(d => d.id === "tyrannosaurus").parts.some(src => src.endsWith(file))),
+  addedDinoDemos.find(d => d.id === "tyrannosaurus").parts.join(","));
 
 check("JSエラー・404なし", errors.length === 0, errors.slice(0, 3).join(" | "));
 

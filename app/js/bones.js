@@ -5,7 +5,7 @@
 //     所長の言葉は「やるたびにランダムで断片が手に入って、**気づけば**全体骨格ができてくる」。
 //     1体ずつにすると「いま ほっているのは◯◯」という、子どもが選んでもいない目標を
 //     宣言することになる。子どもは掘っているつもりはなく、字を書いているだけ
-//   - ダブりは出さない。**まだ持っていない（恐竜×部位）の25マスから引く**。
+//   - ダブりは出さない。**まだ持っていない（恐竜×部位）のマスから引く**。
 //     完全ランダムだと終盤がいつまでも終わらない
 //   - **あたまは、その恐竜の残り4つがそろうまで出ない。**完成の一撃を、
 //     いちばん恐竜らしいパーツにするため
@@ -34,7 +34,7 @@ export const LINEAGE = {
   biped: { label: "にほんあし", art: { body:"biped_body", forelimb:"biped_fore", hindlimb:"biped_hind", tail:"biped_tail" } }
 };
 
-/* 掘る順番。第1弾は四足5体だけ（二足・変わり種は絵ができてから足す）。
+/* 掘る順番。四足は quad、二足は biped の共通パーツを使う。
    custom = 特注パーツの絵。絵柄は共通と同じで、シルエットだけ変える。
    part   = そのときの部位の呼び名（「どう」→「せなかの いた」）。 */
 export const DINOS = [
@@ -95,12 +95,23 @@ export const DINOS = [
       restorationArt:"brachiosaurus_restoration.webp",
       sourceUrl:"https://www.nhm.ac.uk/discover/dino-directory/brachiosaurus.html"
     }
+  },
+  {
+    id: "tyrannosaurus", name: "ティラノサウルス", lineage: "biped",
+    custom: {}, part: {},
+    fact: "おおきな あたまと つよい うしろあしを もっていた",
+    detail: {
+      description: "おおきな あたまと するどい は、つよい うしろあしが とくちょう。まえあしは ちいさく、2ぼんの ゆびが あったよ。",
+      facts: { diet:"にく", size:"ながさ 約12メートル", period:"はくあき こうき（約6800万〜6600万年前）", region:"アメリカ・カナダ" },
+      restorationArt:"tyrannosaurus_restoration.webp",
+      sourceUrl:"https://www.nhm.ac.uk/discover/dino-directory/tyrannosaurus.html"
+    }
   }
 ];
 
 /* まだ絵ができていない恐竜。ここに足すと、絵ができ次第 DINOS へ移せる
    （二足セットと変わり種は1体あたりの絵が高いので後回し） */
-export const LATER = ["ティラノサウルス", "ヴェロキラプトル", "プテラノドン", "エラスモサウルス"];
+export const LATER = ["ヴェロキラプトル", "プテラノドン", "エラスモサウルス"];
 
 /** その恐竜の、その部位に使う絵のキー。特注があればそれ、無ければ共通セット */
 export function artKey(dino, part){

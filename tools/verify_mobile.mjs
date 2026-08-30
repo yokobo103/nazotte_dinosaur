@@ -230,7 +230,7 @@ for (const d of DEVICES) {
       stegosaurus:   ["head","body","forelimb","hindlimb","tail"],
       ankylosaurus:  ["body","forelimb","hindlimb","tail"],
       brachiosaurus: ["body","tail"],
-      triceratops:   [], iguanodon: []
+      triceratops:   [], iguanodon: [], tyrannosaurus: []
     };
     N.dig.done = ["stegosaurus"];
     B.saveDig(N.dig);
@@ -249,7 +249,7 @@ for (const d of DEVICES) {
     };
   });
   check(d.name, "ずかんが横にはみ出さない",
-    digFit.over <= 1 && digFit.cards === 5 && digFit.slot >= 40,
+    digFit.over <= 1 && digFit.cards === 6 && digFit.slot >= 40,
     `はみ出し${digFit.over}px / カード${digFit.cards} / マス幅${digFit.slot.toFixed(0)}px`);
   await page.screenshot({ path: path.join(QA, `${slug}_4_dig.png`) });
   await page.click("#dig .dino-open");

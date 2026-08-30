@@ -13,6 +13,7 @@
     "stegosaurus_restoration.webp": { "dinosaurId": "stegosaurus", "sourceType": "ai-generated restoration" },
     "ankylosaurus_restoration.webp": { "dinosaurId": "ankylosaurus", "sourceType": "ai-generated restoration" },
     "iguanodon_restoration.webp": { "dinosaurId": "iguanodon", "sourceType": "ai-generated restoration" },
-    "brachiosaurus_restoration.webp": { "dinosaurId": "brachiosaurus", "sourceType": "ai-generated restoration" }
+    "brachiosaurus_restoration.webp": { "dinosaurId": "brachiosaurus", "sourceType": "ai-generated restoration" },
+    "tyrannosaurus_restoration.webp": { "dinosaurId": "tyrannosaurus", "sourceType": "ai-generated restoration" }
   }
 }

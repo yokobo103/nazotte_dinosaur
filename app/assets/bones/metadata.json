@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "presentationContract": {
+    "cameraView": "orthographic-side",
+    "mount": "none",
+    "depthRole": "gameplay",
+    "semanticRole": "reward",
+    "gameplaySignal": "collect",
+    "anchor": "image-center"
+  },
+  "sharedSets": {
+    "quad": ["quad_body.webp", "quad_fore.webp", "quad_hind.webp", "quad_tail.webp"],
+    "biped": ["biped_body.webp", "biped_fore.webp", "biped_hind.webp", "biped_tail.webp"]
+  },
+  "dinosaurSpecific": {
+    "stegosaurus": ["stego_body.webp", "head_stegosaurus.webp", "full_stegosaurus.webp"],
+    "brachiosaurus": ["head_brachiosaurus.webp", "full_brachiosaurus.webp"],
+    "tyrannosaurus": ["head_tyrannosaurus.webp", "full_tyrannosaurus.webp"]
+  }
+}
