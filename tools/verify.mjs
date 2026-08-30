@@ -5,6 +5,7 @@ import puppeteer from "puppeteer";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { scan as swScan, writtenVersion } from "./build_sw.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const QA = path.join(HERE, "..", "work", "qa");
@@ -538,6 +539,70 @@ check("いろんな恐竜が同時に進む（1体ずつではない）", rule.s
   `はじめの10こが ${rule.spread}体にまたがる`);
 check("ぜんぶ掘ったら それ以上は出ない", rule.after === null, String(rule.after));
 
+/* --- マスを押したら きろくが出る（5さいが押していた） --- */
+await page.evaluate(() => {
+  const N = window.__nazorin, B = N.bones;
+  const d = B.DINOS[0];
+  N.dig.slots = Object.fromEntries(B.DINOS.map(x => [x.id, []]));
+  N.dig.slots[d.id] = ["body", "tail"];
+  N.dig.done = [];
+  N.dig.log = { [B.logKey(d, "body")]: { day: "2026-08-30", chars: ["あ","い","う","え","お"], sid: "x" } };
+  B.saveDig(N.dig);
+  N.renderDig();
+  document.querySelector('.nav-btn[data-go="dig"]').click();
+});
+await sleep(400);
+
+check("ずかんのマスは 押せる",
+  await page.$$eval("#dig .slot", els => els.length > 0 && els.every(e => e.tagName === "BUTTON")));
+
+// 取れているマス → いつ・どの文字で掘ったかが出る
+await page.evaluate(() => {
+  const s = [...document.querySelectorAll("#dig .slot.has")];
+  s.find(e => e.textContent.includes("どう")).click();
+});
+await sleep(350);
+const sheet = await page.evaluate(() => ({
+  open:  document.querySelector("#part-sheet").classList.contains("is-on"),
+  title: document.querySelector("#part-title").textContent,
+  day:   document.querySelector("#part-day").textContent,
+  chars: [...document.querySelectorAll("#part-hand .sheet-char, #part-hand canvas")].length,
+  art:   !!document.querySelector("#part-art .bone-art")
+}));
+check("取れたマスを押すと きろくが出る",
+  sheet.open && sheet.art && /ほりだした/.test(sheet.day) && sheet.chars === 5,
+  `${sheet.title} / ${sheet.day} / もじ${sheet.chars}`);
+check("ほりだした日が 子ども向けに出る", /8がつ 30にち/.test(sheet.day), sheet.day);
+await shot(page, "16_part_record.png");
+await page.click("#part-close"); await sleep(250);
+check("とじられる", await page.$eval("#part-sheet", e => !e.classList.contains("is-on")));
+
+// まだのマスも 押したら反応する（無反応がいちばん伝わらない）
+await page.evaluate(() => document.querySelector("#dig .slot:not(.has)").click());
+await sleep(300);
+const yet = await page.evaluate(() => ({
+  open: document.querySelector("#part-sheet").classList.contains("is-on"),
+  note: document.querySelector("#part-note").textContent
+}));
+check("まだのマスを押しても 反応がある", yet.open && /さがそう/.test(yet.note), yet.note);
+await page.click("#part-close"); await sleep(200);
+
+// 並び：そろった → 掘りかけ → 手つかず
+await page.evaluate(() => {
+  const N = window.__nazorin, B = N.bones;
+  N.dig.slots[B.DINOS[1].id] = [...B.ALL_PARTS];
+  N.dig.done = [B.DINOS[1].id];
+  B.saveDig(N.dig); N.renderDig();
+});
+await sleep(350);
+const order = await page.evaluate(() => [...document.querySelectorAll("#dig .page.dino")].map(c => ({
+  n: c.querySelector(".page-title").textContent,
+  c: c.querySelector(".count").textContent
+})));
+check("そろった→掘りかけ→手つかず の順にならぶ",
+  order[0].c === "5/5" && order[1].c === "2/5" && order.slice(2).every(x => x.c === "0/5"),
+  order.map(o => o.c).join(" "));
+
 /* ================= 7. データ ================= */
 const dataOk = await page.evaluate(async () => {
   const m = await import("/data/kana.js");
@@ -641,6 +706,47 @@ check("ティラノの4部位は二足恐竜共通セットを使う",
   ["biped_body.webp", "biped_fore.webp", "biped_hind.webp", "biped_tail.webp"].every(file =>
     addedDinoDemos.find(d => d.id === "tyrannosaurus").parts.some(src => src.endsWith(file))),
   addedDinoDemos.find(d => d.id === "tyrannosaurus").parts.join(","));
+
+/* ================= 8. オフライン ================= */
+{
+  const s = swScan();
+  check("sw.js が最新（node tools/build_sw.mjs を回し忘れていない）",
+    s.version === writtenVersion(), `いま ${s.version} / 書いてある ${writtenVersion()}`);
+  check("配信サイズが 2MB を超えていない", s.total < 2 * 1024 * 1024,
+    `${(s.total/1024).toFixed(0)}KB / ${s.files.length}ファイル`);
+}
+
+const swReady = await page.evaluate(async () => {
+  if (!("serviceWorker" in navigator)) return "つかえない";
+  const reg = await Promise.race([
+    navigator.serviceWorker.ready.then(()=> "ready"),
+    new Promise(r => setTimeout(()=> r("おそい"), 8000))
+  ]);
+  return reg;
+});
+check("Service Worker が登録される", swReady === "ready", swReady);
+
+await sleep(3000);   // 一式が入るのを待つ
+const cached = await page.evaluate(async () => {
+  const keys = await caches.keys();
+  if (!keys.length) return { n: 0, name: "なし" };
+  const c = await caches.open(keys[0]);
+  return { n: (await c.keys()).length, name: keys[0] };
+});
+check("アプリ一式がキャッシュされる", cached.n >= 35, `${cached.n}件 (${cached.name})`);
+
+await page.setOfflineMode(true);
+await page.reload({ waitUntil: "domcontentloaded" });
+await sleep(1200);
+const offlineView = await page.evaluate(() => ({
+  title: document.title,
+  cells: document.querySelectorAll(".cell:not(.blank)").length,
+  art:   !!document.querySelector("#btn-start")
+}));
+check("電波が無くても ひらける", offlineView.cells === 46 && offlineView.art,
+  `${offlineView.cells}マス / ${offlineView.title}`);
+await shot(page, "17_offline.png");
+await page.setOfflineMode(false);
 
 check("JSエラー・404なし", errors.length === 0, errors.slice(0, 3).join(" | "));
 

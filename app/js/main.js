@@ -37,6 +37,7 @@ const el = {
   missionMode:$("#mission-mode"),
   homeBones:$("#home-bones"),
   rewardHand:$("#reward-handwriting"),
+  sheet:     $("#part-sheet"),
   rewardAchievements:$("#reward-achievements")
 };
 
@@ -318,6 +319,19 @@ function finishSession(){
   handwriting.sessions.push(record);
   saveHandwriting();
 
+  // どの文字を書いていて掘り当てたのか、骨のほうにも残す。
+  // 筆跡は古いものから捨てられるが、日付と文字は軽いので必ず残る
+  if (bone){
+    dig.log = dig.log || {};
+    const now = new Date();
+    dig.log[B.logKey(bone.dino, bone.part)] = {
+      day: `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}-${String(now.getDate()).padStart(2,"0")}`,
+      chars: done.slice(),
+      sid: record.id
+    };
+    B.saveDig(dig);
+  }
+
   // ① まず「自分で書いた！」を見せる。骨より先に、練習そのものを成果にする。
   queueReward({
     kind: "handwriting",
@@ -363,7 +377,9 @@ function finishSession(){
 const SLOT_ORDER = ["head", "body", "forelimb", "hindlimb", "tail"];
 
 function slotEl(dino, part, has){
-  const slot = document.createElement("div");
+  // 5さいが押した。押せそうに見えるものは、押せなければならない
+  const slot = document.createElement("button");
+  slot.type = "button";
   slot.className = "slot" + (has ? " has" : "");
   if (has) slot.appendChild(boneElement(B.artKey(dino, part), 54));
   else {
@@ -375,8 +391,63 @@ function slotEl(dino, part, has){
   cap.className = "slot-label";
   cap.textContent = has ? B.partName(dino, part) : B.PART_LABEL[part];   // 特別な名前は取ってから
   slot.appendChild(cap);
+  slot.setAttribute("aria-label",
+    has ? `${dino.name}の ${B.partName(dino, part)}。ほりだした きろくを みる`
+        : `${B.PART_LABEL[part]}は まだ みつかっていない`);
+  slot.addEventListener("click", ()=>{ sfx.unlock(); sfx.pop(); openPartSheet(dino, part, has); });
   return slot;
 }
+
+/* ---- ホネ1つの きろく ---- */
+const MONTH_DAY = (day)=>{
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(day || "");
+  return m ? `${Number(m[2])}がつ ${Number(m[3])}にち` : null;
+};
+
+function openPartSheet(dino, part, has){
+  const art  = $("#part-art");
+  const hand = $("#part-hand");
+  art.innerHTML = ""; hand.innerHTML = "";
+
+  $("#part-dino").textContent = has ? dino.name : "";
+  $("#part-title").textContent = has ? B.partName(dino, part) : `${B.PART_LABEL[part]}は まだ`;
+
+  if (has){
+    art.appendChild(boneElement(B.artKey(dino, part), 132));
+    const log = B.foundLog(dig, dino, part);
+    const when = log && MONTH_DAY(log.day);
+    $("#part-day").textContent = when ? `${when}に ほりだした` : "";
+
+    // そのとき書いた文字。筆跡が残っていれば筆跡、無ければ文字だけ
+    const rec = log && handwriting.sessions.find(r => r.id === log.sid);
+    const chars = (log && log.chars) || [];
+    if (rec && rec.characters && rec.characters.length){
+      for (const sample of rec.characters) hand.appendChild(handwritingCanvas(sample));
+      $("#part-note").textContent = "この もじを かいて みつけたよ";
+    } else if (chars.length){
+      for (const ch of chars){
+        const b = document.createElement("span");
+        b.className = "sheet-char"; b.textContent = ch;
+        hand.appendChild(b);
+      }
+      $("#part-note").textContent = "この もじを かいて みつけたよ";
+    } else {
+      $("#part-note").textContent = "きろくが のこっていない ホネだよ";
+    }
+  } else {
+    const q = document.createElement("span");
+    q.className = "sheet-q"; q.textContent = "？";
+    art.appendChild(q);
+    $("#part-day").textContent = "";
+    $("#part-note").textContent = "もじを なぞって さがそう！";
+  }
+  el.sheet.classList.add("is-on");
+  if (has) say(`${dino.name}の ${B.partName(dino, part)}`);
+}
+
+function closePartSheet(){ el.sheet.classList.remove("is-on"); }
+$("#part-close").addEventListener("click", ()=>{ sfx.pop(); closePartSheet(); });
+el.sheet.addEventListener("click", (e)=>{ if (e.target === el.sheet) closePartSheet(); });
 
 function completePartsEl(dino){
   const wrap = document.createElement("div");
@@ -446,8 +517,11 @@ function dinoCard(dino){
 
 function renderDig(){
   el.digWrap.innerHTML = "";
-  const done = B.DINOS.filter(d => B.isComplete(dig, d));
-  const rest = B.DINOS.filter(d => !B.isComplete(dig, d));
+  // そろった → 掘りかけ → 手つかず。手つかずが上に来ると、進んでいるものが埋もれる
+  const done  = B.DINOS.filter(d => B.isComplete(dig, d));
+  const going = B.DINOS.filter(d => !B.isComplete(dig, d) && B.gotParts(dig, d).length > 0);
+  const yet   = B.DINOS.filter(d => !B.isComplete(dig, d) && B.gotParts(dig, d).length === 0);
+  const rest  = [...going, ...yet];
   for (const d of [...done, ...rest]) el.digWrap.appendChild(dinoCard(d));
   el.digTotal.textContent = `${B.boneCount(dig)} / ${B.TOTAL_BONES()}`;
   el.digNote.textContent = allPlaceholder() ? "※ ホネの えは まだ 仮のものです" : "";
@@ -760,6 +834,12 @@ function confetti(){
 }
 
 /* ================= 起動 ================= */
+// 電波が無くても開けるようにする。相対パスで登録するので、
+// GitHub Pages の /nazotte_dinosaur/ の下でもそのまま効く
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")){
+  addEventListener("load", ()=> navigator.serviceWorker.register("sw.js").catch(()=>{}));
+}
+
 document.addEventListener("pointerdown", ()=>sfx.unlock(), { once:true });
 document.addEventListener("gesturestart", e=>e.preventDefault());
 renderGrid();
@@ -783,7 +863,7 @@ else if (params.get("dino")) openDinoDetail(params.get("dino"), { updateHistory:
 // 開発用フック（ヘッドレス調整ハーネスから触る）
 window.__nazorin = {
   tracer, stamps, dig, handwriting, bones: B, starsOf,
-  openChar, renderGrid, renderDig, renderDinoDetail, openDinoDetail, closeDinoDetail,
+  openChar, renderGrid, renderDig, openPartSheet, closePartSheet, renderDinoDetail, openDinoDetail, closeDinoDetail,
   popBone, startSession, startPractice, show, el,
   REPS, SET,
   get char(){ return curChar; },

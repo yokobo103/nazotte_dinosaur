@@ -144,6 +144,10 @@ export function loadDig(){
   if (!d || typeof d !== "object") d = {};
 
   const done  = Array.isArray(d.done) ? d.done.filter(id => DINOS.some(x => x.id === id)) : [];
+  // log["恐竜id:部位"] = { day:"2026-08-30", chars:["あ",...], sid:"セッションid" }
+  // 筆跡そのものは handwriting 側にあるが、あちらは古いものから捨てられる。
+  // 日付と文字だけは軽い（1件40バイト程度）ので、こちらに持って必ず残す。
+  const log = (d.log && typeof d.log === "object") ? d.log : {};
   const slots = {};
   for (const dino of DINOS) slots[dino.id] = [];
 
@@ -158,7 +162,7 @@ export function loadDig(){
     if (cur) slots[cur.id] = d.got.filter(p => ALL_PARTS.includes(p));
   }
   for (const id of done) slots[id] = [...ALL_PARTS];
-  return { slots, done };
+  return { slots, done, log };
 }
 
 export function saveDig(dig){
@@ -168,6 +172,8 @@ export function saveDig(dig){
 export const gotParts   = (dig, dino)=> dig.slots[dino.id] || [];
 export const isComplete = (dig, dino)=> ALL_PARTS.every(p => gotParts(dig, dino).includes(p));
 export const boneCount  = (dig)=> DINOS.reduce((n, d) => n + gotParts(dig, d).length, 0);
+export const logKey     = (dino, part)=> dino.id + ":" + part;
+export const foundLog   = (dig, dino, part)=> (dig.log || {})[logKey(dino, part)] || null;
 export const TOTAL_BONES = () => DINOS.length * ALL_PARTS.length;
 
 /** つぎに出る骨を1つ決める。
