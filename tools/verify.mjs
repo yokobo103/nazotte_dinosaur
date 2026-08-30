@@ -715,6 +715,59 @@ check("ティラノの4部位は二足恐竜共通セットを使う",
     addedDinoDemos.find(d => d.id === "tyrannosaurus").parts.some(src => src.endsWith(file))),
   addedDinoDemos.find(d => d.id === "tyrannosaurus").parts.join(","));
 
+/* --- かたちを見ているか（5さいが「す」を「ナ」のように書いて通った） --- */
+const shapeCheck = await page.evaluate(async () => {
+  const t = window.__nazorin.tracer;
+  const m = await import("/data/kana.js");
+  const w = await import("/js/words.js");
+  const chars = [...new Set([...Object.values(w.SETS.hira).flat(),
+                             ...Object.values(w.SETS.kata).flat()])].filter(Boolean);
+  // その画を「始点から終点まで まっすぐ」引いただけの線
+  const straight = (s) => {
+    const a = s.pts[0], z = s.pts[s.pts.length - 1];
+    return Array.from({ length: 20 }, (_, k) => ({
+      x: a.x + (z.x - a.x) * k / 19, y: a.y + (z.y - a.y) * k / 19 }));
+  };
+  // 手のふるえ（線に直角）
+  const wobble = (s, jit) => {
+    const span = s.pts.length - 1;
+    return s.pts.map((q, k) => {
+      const q0 = s.pts[Math.max(0, k-1)], q1 = s.pts[Math.min(span, k+1)];
+      const tx = q1.x - q0.x, ty = q1.y - q0.y, L = Math.hypot(tx, ty) || 1;
+      const wv = Math.sin(Math.PI * k / span);
+      const off = jit * wv * (0.75 * Math.sin(k*0.28 + 1.1) + 0.25 * Math.sin(k*1.3));
+      return { x: q.x + (-ty/L)*off, y: q.y + (tx/L)*off };
+    });
+  };
+
+  let straightPass = 0, wobbleFail = 0, wobbleTotal = 0;
+  for (const ch of chars){
+    t.load(m.KANA[ch]);
+    for (const s of t.strokes){
+      const r = t.score(straight(s), s);
+      if (r && r.ok) straightPass++;
+      for (const j of [0, 4, 8, 12, 16]){
+        const g = t.score(wobble(s, j), s);
+        wobbleTotal++;
+        if (!g || !g.ok) wobbleFail++;
+      }
+    }
+  }
+  // 報告そのもの：「す」の2画目を「ナ」のように まっすぐ書く
+  t.load(m.KANA["す"]);
+  const su = t.score(straight(t.strokes[1]), t.strokes[1]);
+  return { straightPass, wobbleFail, wobbleTotal,
+           su: { ok: su.ok, reason: su.reason, flow: +su.meanFlow.toFixed(1) } };
+});
+check("「す」を「ナ」のように まっすぐ書くと通らない",
+  shapeCheck.su.ok === false && shapeCheck.su.reason === "shape",
+  `理由=${shapeCheck.su.reason} 形のズレ${shapeCheck.su.flow}`);
+check("ていねい〜かなり下手（±16）まで、正しい形はぜんぶ通る",
+  shapeCheck.wobbleFail === 0, `落ちた ${shapeCheck.wobbleFail}/${shapeCheck.wobbleTotal}`);
+check("まっすぐ引くだけで通るのは もともと直線の画だけ",
+  shapeCheck.straightPass <= 345,
+  `${shapeCheck.straightPass}本（曲がった画は止まる）`);
+
 /* ================= 8. オフライン ================= */
 {
   const s = swScan();

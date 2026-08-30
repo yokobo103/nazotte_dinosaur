@@ -3,6 +3,9 @@
 // v2との違い:
 //   - 指の生の軌跡をそのまま描いて残す。完成した字は「子どもが書いた線」でできている
 //   - 判定はチェックポイントの通過ではなく、書き終わってから お手本との似ぐあいを測る
+//   - 「いちばん近い点」までの距離だけでは、ループのある画を まっすぐ横切っただけで
+//     通ってしまう（5さいが「す」を「ナ」のように書いて合格した）。長さで等分して
+//     「進みぐあいが同じ点」どうしを比べる meanFlow を足して止めている
 // 座標系は KanjiVG の 109x109。
 const VB = 109;
 
@@ -15,7 +18,7 @@ const MIN_LEN = 6;    // これより短い線はタップとみなして黙っ�
 const MIN_STEP = 0.8; // 記録する点の間引き（109基準）
 
 // 合格ライン。どれか1つでも切ったら やりなおし（理由を返す）
-const PASS  = { coverage: 0.70, onPath: 0.45, order: 0.50 };
+const PASS  = { coverage: 0.70, onPath: 0.45, order: 0.50, flow: 10 };
 // 点数の配合。かたち＝手本をなぞれているか / きれいさ＝はみ出していないか
 const W     = { shape: 0.45, neat: 0.35, order: 0.20 };
 
@@ -219,6 +222,37 @@ export class Tracer {
     const meanStray = sumStray / ink.length;
     const onPath    = on / ink.length;
 
+    // ③ 流れ：「進みぐあいが同じ点」どうしを比べる。
+    //    ①②は「いちばん近い点」までの距離なので、順番も対応も見ていない。
+    //    ループのある画を まっすぐ横切るだけで「全部の点の近くを通った」ことになり、
+    //    「す」を「ナ」のように書いても通ってしまった（5さいの指摘で判明）。
+    //    長さで等分して同じ位置どうしを比べれば、形と順番の両方が効く。
+    const resample = (pts, n)=>{
+      const acc = [0];
+      for (let i = 1; i < pts.length; i++) acc[i] = acc[i-1] + dist(pts[i-1], pts[i]);
+      const L = acc[acc.length-1] || 1;
+      const out = [];
+      let j = 0;
+      for (let k = 0; k <= n; k++){
+        const at = L * k / n;
+        while (j < pts.length - 2 && acc[j+1] < at) j++;
+        const seg = (acc[j+1] - acc[j]) || 1;
+        const r = Math.max(0, Math.min(1, (at - acc[j]) / seg));
+        out.push({ x: pts[j].x + (pts[j+1].x - pts[j].x) * r,
+                   y: pts[j].y + (pts[j+1].y - pts[j].y) * r });
+      }
+      return out;
+    };
+    const STEPS = 24;
+    const mm = resample(s.pts, STEPS), uu = resample(ink, STEPS);
+    let sumFlow = 0, maxFlow = 0;
+    for (let k = 0; k <= STEPS; k++){
+      const d = dist(mm[k], uu[k]);
+      sumFlow += d;
+      if (d > maxFlow) maxFlow = d;
+    }
+    const meanFlow = sumFlow / (STEPS + 1);
+
     // ③ 書きはじめ・書きおわりに届いたか
     const dStart = nearestToLine(s.pts[0], ink);
     const dEnd   = nearestToLine(s.pts[s.pts.length - 1], ink);
@@ -242,8 +276,9 @@ export class Tracer {
     else if (dStart   > R_END)         reason = "start";    // 書きはじめに来ていない
     else if (dEnd     > R_END)         reason = "short";    // 書きおわりに届いていない
     else if (coverage < PASS.coverage) reason = "short";    // 途中がごっそり抜けている
+    else if (meanFlow > PASS.flow)     reason = "shape";    // なぞった道の形がちがう
 
-    return { value, shape, neat, order, coverage, onPath,
+    return { value, shape, neat, order, coverage, onPath, meanFlow, maxFlow,
              meanErr, meanStray, dStart, dEnd, ok: !reason, reason };
   }
 

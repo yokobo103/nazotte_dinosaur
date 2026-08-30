@@ -546,7 +546,8 @@ const WHY = {
   reverse: "はんたいから かいてるよ",
   start:   "はじめの ●から なぞろう",
   short:   "さいごまで なぞろう",
-  off:     "せんの うえを なぞろう"
+  off:     "せんの うえを なぞろう",
+  shape:   "かたちが ちがうみたい"
 };
 
 tracer.on.tick = (p)=> sfx.tick(p);
