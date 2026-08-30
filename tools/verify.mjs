@@ -73,28 +73,59 @@ const state = (page) => page.evaluate(() => {
   };
 });
 
-/** ごほうびが出ていたら閉じる（画面全体をふさぐので、次の操作が届かなくなる） */
-async function dismissReward(page) {
-  if (await page.$eval("#reward", e => e.classList.contains("is-on"))) {
-    await page.click("#reward-ok"); await sleep(200);
+/** ごほうび画面を全部閉じきる。
+ *  行かんせいと きょうりゅうかんせいが続けて出るので1回では足りない。
+ *  「まだ出ていないだけ」の場合もあるので、待ち行列が空になるまで面倒を見る。 */
+async function settleRewards(page) {
+  for (let i = 0; i < 10; i++) {
+    const r = await page.evaluate(() => window.__nazorin.rewards());
+    if (!r.open && !r.queued) return;
+    if (r.open) { await page.click("#reward-ok"); await sleep(420); }
+    else await sleep(600);
   }
 }
+const dismissReward = settleRewards;
 
 /** 1字まるごと書ききる */
 async function traceChar(page, ch, opts = {}) {
-  await dismissReward(page);
-  await page.evaluate(c => window.__nazorin.openChar(c, "table"), ch);
+  const settle = opts.settle !== false;
+  await settleRewards(page);
+  await page.evaluate(c => window.__nazorin.openChar(c), ch);
   await sleep(320);
   const s0 = await state(page);
   for (let i = 0; i < s0.total; i++) await traceStroke(page, i, opts);
   await sleep(240);
-  return { strokes: s0.total, ...(await state(page)) };
+  const out = { strokes: s0.total, ...(await state(page)) };
+  if (out.done && settle) await settleRewards(page);
+  return out;
+}
+
+/** れんしゅうのセットを1つ走りきる。1文字を REPS 回、SET 文字ぶん */
+async function runSession(page, opts = {}) {
+  await settleRewards(page);
+  await page.evaluate(() => {
+    const N = window.__nazorin;
+    N.show(N.el.home);
+    N.startSession();
+  });
+  await sleep(400);
+  let traces = 0;
+  for (let guard = 0; guard < 40; guard++){
+    const alive = await page.evaluate(() => !!window.__nazorin.session);
+    if (!alive) break;
+    const n = await page.evaluate(() => window.__nazorin.tracer.strokes.length);
+    for (let i = 0; i < n; i++) await traceStroke(page, i, opts);
+    traces++;
+    await sleep(1900);   // 1文字書けたあと、ひとりでに次へ進むのを待つ
+  }
+  await sleep(600);
+  return traces;
 }
 
 /** 1画だけ書いて結果を返す（毎回まっさらから） */
 async function tryStroke(page, ch, opts, strokeIndex = 0) {
   await dismissReward(page);
-  await page.evaluate(c => window.__nazorin.openChar(c, "table"), ch);
+  await page.evaluate(c => window.__nazorin.openChar(c), ch);
   await sleep(300);
   await traceStroke(page, strokeIndex, opts);
   await sleep(180);
@@ -123,11 +154,13 @@ check("ひらがな表に46字ならぶ", await page.$$eval(".cell:not(.blank)",
 await shot(page, "01_table.png");
 
 const bar = await page.evaluate(() => {
-  const w = (s)=> +document.querySelector(s).getBoundingClientRect().width.toFixed(1);
-  return { book: w("#btn-book"), reset: w("#btn-reset") };
+  const r = (s)=> document.querySelector(s).getBoundingClientRect();
+  return { gear: +r("#btn-reset").width.toFixed(1), start: +r("#btn-start").width.toFixed(1),
+           nav: +r('.nav-btn[data-go="dig"]').width.toFixed(1), vw: window.innerWidth };
 });
-check("ヘッダのボタンが横に伸びていない", bar.book < 90 && bar.reset < 90,
-  `ずかん${bar.book}px / ごみばこ${bar.reset}px`);
+check("設定は小さく、スタートと行き来ボタンは大きい",
+  bar.gear < 70 && bar.start > bar.vw * 0.8 && bar.nav > bar.vw * 0.8,
+  `⚙${bar.gear}px / スタート${bar.start}px / ずかんへ${bar.nav}px`);
 
 await page.click('.tab[data-set="dakuon"]'); await sleep(150);
 check("だくおんタブに25字", await page.$$eval(".cell:not(.blank)", e => e.length) === 25);
@@ -146,6 +179,17 @@ await page.click('.tab[data-set="small"]'); await sleep(150);
 const kataSmall = await page.$$eval(".cell:not(.blank)", els => els.map(e => e.textContent).join(""));
 check("カタカナのちいさいじに「ー」がある", kataSmall.includes("ー"), kataSmall);
 await page.click('.tab[data-set="seion"]'); await sleep(150);
+
+const kataSession = await page.evaluate(() => {
+  const N = window.__nazorin;
+  N.startSession();
+  return { chars: N.session.chars, kana: N.session.kana, set: N.session.set };
+});
+check("カタカナも同じ5文字・3回ルールで開始する",
+  kataSession.chars.length === 5 && kataSession.kana === "kata" && kataSession.set === "seion" &&
+  kataSession.chars.every(c => c.codePointAt(0) >= 0x30a1 && c.codePointAt(0) <= 0x30fc),
+  `${kataSession.kana}/${kataSession.set}: ${kataSession.chars.join("")}`);
+await page.click("#btn-back"); await sleep(150);
 
 for (const ch of ["ア", "ソ", "ヲ", "ー", "ポ"]) {
   const r = await traceChar(page, ch, { jitter: 4 });
@@ -229,7 +273,7 @@ check("2画目から書こうとしても通らない", wrong.cur === 0 && wrong
   `cur=${wrong.cur} 理由=${wrong.res?.reason}`);
 
 // ただのタップは何も起きない（怒られない）
-await page.evaluate(() => window.__nazorin.openChar("あ", "table"));
+await page.evaluate(() => window.__nazorin.openChar("あ"));
 await sleep(300);
 await page.evaluate(() => {
   const t = window.__nazorin.tracer;
@@ -254,66 +298,151 @@ check("おてほんが再生される", await page.evaluate(() => window.__nazor
 await shot(page, "05_demo.png");
 await sleep(2600);
 
-/* ================= 6. ずかん ================= */
-await dismissReward(page);
-await page.evaluate(() => window.__nazorin.openBook());
-await sleep(300);
-check("ずかんのページが17（ひらがな）",
-  await page.$$eval(".page", e => e.length) === 17);
+/* ================= 6.5 ホネあつめ ================= */
+const bones = () => page.evaluate(() => window.__nazorin.bones.boneCount(window.__nazorin.dig));
+const rules = await page.evaluate(() => ({ REPS: window.__nazorin.REPS, SET: window.__nazorin.SET }));
 
-const lockedBefore = await page.$$eval(".item.locked", els => els.length);
-const itemsTotal   = await page.$$eval(".item", els => els.length);
-const openBefore   = await page.$eval("#book-total", e => Number(e.textContent.split("/")[0]));
-check("なぞってない字はふせてある", lockedBefore === itemsTotal - openBefore,
-  `ふせ${lockedBefore} / ぜんぶ${itemsTotal} / あけた${openBefore}`);
-check("★が ずかんに出る",
-  await page.$$eval(".item:not(.locked) .stars", els => els.some(e => e.textContent.includes("★"))));
-await shot(page, "06_book_start.png");
+// 自由に1字書いただけでは ホネはもらえない（表から選んだとき）
+await page.evaluate(() => window.__nazorin.setKana("hira"));
+const free0 = await bones();
+await traceChar(page, "か", { jitter: 3 });
+check("表から選んで1字書いても ホネはもらえない", (await bones()) === free0, `${free0} → ${await bones()}`);
 
-/* あ行を全部書く → ページが かんせい してごほうびが出る */
-for (const ch of ["い", "う", "え"]) {
-  const rr = await traceChar(page, ch, { jitter: 3 });
-  if (!rr.done) check(`「${ch}」が書ききれない`, false, `${rr.cur}/${rr.total}画`);
-}
-check("4字ではまだ ごほうびが出ない",
-  await page.$eval("#reward", e => e.classList.contains("is-on")) === false);
+// セットを1つ走りきると ホネが1個
+const b0 = await bones();
+await page.evaluate(() => { window.__nazorin.rewardLog.length = 0; });
+const traces = await runSession(page, { jitter: 4 });
+const b1 = await bones();
+check(`1文字を${rules.REPS}回・${rules.SET}文字で 1セット`,
+  traces === rules.REPS * rules.SET, `${traces}回なぞった（想定 ${rules.REPS * rules.SET}）`);
+check("セットを1つ終えると ホネが1こ", b1 === b0 + 1, `${b0} → ${b1}`);
+const log1 = await page.evaluate(() => window.__nazorin.rewardLog.map(r => r.title));
+check("セットの終わりに ごほうび画面が出る", log1.length >= 1, log1.join(" → ") || "なし");
+const ownResult = await page.evaluate(() => {
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem("nazorin.handwriting.v1")); } catch {}
+  const latest = saved && saved.sessions && saved.sessions.at(-1);
+  return {
+    title: document.querySelector("#reward-title").textContent,
+    cards: document.querySelectorAll("#reward-handwriting .hand-card canvas").length,
+    savedChars: latest && latest.characters ? latest.characters.length : 0,
+    hasPoints: !!(latest && latest.characters && latest.characters.every(c =>
+      c.strokes.length && c.strokes.every(s => s.points.length > 1)))
+  };
+});
+check("練習終了後に 自分が書いた5文字が並ぶ",
+  ownResult.title.includes("じぶんで かいた") && ownResult.cards === rules.SET,
+  `${ownResult.title} / ${ownResult.cards}枚`);
+check("筆跡が再利用できる点列として保存される",
+  ownResult.savedChars === rules.SET && ownResult.hasPoints,
+  `${ownResult.savedChars}文字 / 点列=${ownResult.hasPoints}`);
+await shot(page, "15_session_handwriting_result.png");
 
-await traceChar(page, "お", { jitter: 3 });
-await sleep(2000);
-check("あ行がそろうと ごほうびが出る",
-  await page.$eval("#reward", e => e.classList.contains("is-on")) === true,
-  await page.$eval("#reward-title", e => e.textContent));
-check("ごほうびに5つの絵が出る",
-  (await page.$eval("#reward-emojis", e => e.textContent.trim().split(/\s+/).length)) === 5);
-await shot(page, "07_reward.png");
-await page.click("#reward-ok"); await sleep(300);
-
-await page.evaluate(() => window.__nazorin.openBook());
-await sleep(300);
-check("ずかんの あ行ページが かんせいになる",
-  await page.$eval(".page", e => e.classList.contains("full")) === true);
-check("ずかんの数がふえる",
-  /^\s*5\s*\/\s*81\s*$/.test(await page.$eval("#book-total", e => e.textContent)));
-await shot(page, "08_book_filled.png");
-
-await page.evaluate(() => document.querySelectorAll(".item")[1].click());
+// れんしゅう中は「つぎ」で飛ばせない（飛ばせると書かずにホネがもらえる）
+await settleRewards(page);
+await page.evaluate(() => { const N = window.__nazorin; N.show(N.el.home); N.startSession(); });
 await sleep(400);
-check("ずかんの絵をおすと なぞり画面へ行く",
-  await page.$eval("#screen-trace", e => e.classList.contains("is-on")));
-await page.click("#btn-back"); await sleep(300);
-check("そこから もどると ずかんへ帰る",
-  await page.$eval("#screen-book", e => e.classList.contains("is-on")));
+const skip = await page.evaluate(() => {
+  const btn = document.querySelector("#btn-next");
+  return { hidden: btn.classList.contains("is-hidden"),
+           shown: btn.getBoundingClientRect().width > 0 };
+});
+check("れんしゅう中は「つぎ」で飛ばせない", skip.hidden && !skip.shown, JSON.stringify(skip));
+await page.evaluate(() => document.querySelector("#btn-back").click());
+await sleep(300);
+check("じゆうに書くときは「つぎ」が出る",
+  await page.evaluate(() => { window.__nazorin.openChar("た");
+    return !document.querySelector("#btn-next").classList.contains("is-hidden"); }));
+await page.evaluate(() => document.querySelector("#btn-back").click());
+await sleep(200);
+await shot(page, "14_set_done.png");
+await settleRewards(page);
 
-await page.click('#book-switch .seg-btn[data-kana="kata"]'); await sleep(300);
-check("カタカナのずかんも17ページ",
-  await page.$$eval(".page", e => e.length) === 17);
-await shot(page, "09_book_katakana.png");
+// 点数は報酬にひびかない。へたに書いてもセットを終えれば もらえる
+const b2 = await bones();
+await runSession(page, { jitter: 16 });   // わざと下手に
+const b3 = await bones();
+check("へたに書いても ホネはもらえる（点数は報酬にひびかない）", b3 === b2 + 1, `${b2} → ${b3}`);
+await settleRewards(page);
 
-/* 表にも★が出る */
-await page.click("#btn-book-back"); await sleep(300);
-check("表のマスに★が出る",
-  await page.$$eval(".cell.done", els => els.some(e => (e.dataset.stars || "").includes("★"))));
-await shot(page, "10_table_stars.png");
+/* --- きょうりゅう ずかん --- */
+// 見たい状態を作ってから見る（そろった1体・あと1こ1体・手つかず1体）
+await page.evaluate(() => {
+  const N = window.__nazorin, B = N.bones;
+  N.dig.slots = {
+    stegosaurus:   ["head","body","forelimb","hindlimb","tail"],
+    ankylosaurus:  ["body","forelimb","hindlimb","tail"],
+    brachiosaurus: ["body","tail"],
+    triceratops:   ["hindlimb"],
+    iguanodon:     []
+  };
+  N.dig.done = ["stegosaurus"];
+  B.saveDig(N.dig);
+  N.renderDig();
+  document.querySelector('.nav-btn[data-go="dig"]').click();
+});
+await sleep(400);
+check("きょうりゅうずかんがひらく",
+  await page.$eval("#screen-dig", e => e.classList.contains("is-on")));
+
+const cards = await page.evaluate(() => [...document.querySelectorAll("#dig .page.dino")].map(c => ({
+  name:  c.querySelector(".page-title").textContent,
+  count: c.querySelector(".count").textContent,
+  ribbon:(c.querySelector(".ribbon") || {}).textContent || "",
+  slots: c.querySelectorAll(".slot").length,
+  has:   c.querySelectorAll(".slot.has").length,
+  art:   !!c.querySelector(".dino-full")
+})));
+check("5体ぶんならぶ", cards.length === 5, cards.map(c => `${c.name}${c.count}`).join(" "));
+check("そろった1体だけ 全体像が見える",
+  cards.filter(c => c.art).length === 1 && cards[0].art === true,
+  cards.filter(c => c.art).map(c => c.name).join(",") || "なし");
+check("そろった恐竜が いちばん上に来る", cards[0].name === "ステゴサウルス", cards[0].name);
+check("最初の骨から 恐竜の名前がわかる",
+  cards.filter(c => c.count !== "0/5").every(c => c.name !== "？" && c.name !== "なぞの きょうりゅう"),
+  cards.map(c => `${c.name}${c.count}`).join(" "));
+check("あと1この恐竜に しるしが出る",
+  cards.some(c => c.ribbon.includes("あと 1こ") && c.count === "4/5"),
+  cards.map(c => c.ribbon).filter(Boolean).join(" / "));
+check("手つかずの恐竜は 名前もマスも出さない",
+  cards.some(c => c.name === "？" && c.count === "0/5" && c.slots === 0));
+check("途中の恐竜は 取ったマスだけ うまっている",
+  cards.filter(c => c.slots > 0).every(c => c.has === Number(c.count.split("/")[0])),
+  cards.filter(c => c.slots > 0).map(c => `${c.name} ${c.has}/${c.slots}`).join(" "));
+check("ホネの合計が出る",
+  /^\s*12\s*\/\s*25\s*$/.test(await page.$eval("#dig-total", e => e.textContent)),
+  await page.$eval("#dig-total", e => e.textContent));
+await shot(page, "13_zukan.png");
+await page.click('.nav-btn[data-go="home"]'); await sleep(250);
+
+// ルールだけを直接まわす（なぞりを何十回もやらずに済む）
+const rule = await page.evaluate(() => {
+  const B = window.__nazorin.bones;
+  const d = { slots: Object.fromEntries(B.DINOS.map(x => [x.id, []])), done: [] };
+  const seen = new Set(), dup = [], order = [];
+  let headAlwaysLast = true, n = 0;
+  for (; n < 200; n++){
+    const pick = B.drawBone(d);
+    if (!pick) break;
+    const key = pick.dino.id + ":" + pick.part;
+    if (seen.has(key)) dup.push(key);
+    seen.add(key);
+    const before = B.gotParts(d, pick.dino).length;
+    const r = B.addBone(d, pick);
+    if (pick.part === "head" && before !== 4) headAlwaysLast = false;
+    if (r && r.complete) order.push(r.dino.name);
+  }
+  // いろんな恐竜が並行して進むか（最初の10個が何体にまたがるか）
+  const firstTen = [...seen].slice(0, 10).map(k => k.split(":")[0]);
+  return { n, dup, headAlwaysLast, done: order.length,
+           spread: new Set(firstTen).size, after: B.drawBone(d) };
+});
+check("25こで5体そろう", rule.n === 25 && rule.done === 5, `${rule.n}こ / ${rule.done}体`);
+check("ダブりが出ない", rule.dup.length === 0, rule.dup.join(",") || "なし");
+check("あたまは その恐竜の残り4つがそろうまで出ない", rule.headAlwaysLast === true);
+check("いろんな恐竜が同時に進む（1体ずつではない）", rule.spread >= 3,
+  `はじめの10こが ${rule.spread}体にまたがる`);
+check("ぜんぶ掘ったら それ以上は出ない", rule.after === null, String(rule.after));
 
 /* ================= 7. データ ================= */
 const dataOk = await page.evaluate(async () => {
@@ -337,6 +466,51 @@ check("178字ぶんのストロークが健全", dataOk.count === 178 && dataOk.
 check("表にならぶ字は ことばも形もそろっている",
   dataOk.noWord.length === 0 && dataOk.noShape.length === 0,
   `ことば欠け:${dataOk.noWord.join("") || "なし"} 形欠け:${dataOk.noShape.join("") || "なし"}`);
+
+// 仮の骨が描画枠からはみ出していないか（はみ出すと黙って切り取られる）
+const strayArt = await page.evaluate(async () => {
+  const art = await import("/js/boneart.js");
+  const m   = await import("/assets/manifest.js");
+  const over = [];
+  for (const key of Object.keys(m.ART)){
+    const cv = art.drawBone(key, 200);
+    const d = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data;
+    const W = cv.width;
+    let x0 = W, y0 = W, x1 = -1, y1 = -1;
+    for (let y = 0; y < W; y++) for (let x = 0; x < W; x++){
+      if (d[(y*W + x)*4 + 3] > 16){ if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; }
+    }
+    if (x1 < 0){ over.push(key + ":空"); continue; }
+    if (x0 <= 1 || y0 <= 1 || x1 >= W-2 || y1 >= W-2) over.push(key);
+  }
+  return over;
+});
+check("仮の骨が枠からはみ出していない", strayArt.length === 0, strayArt.join(",") || "なし");
+
+const webpAssets = await page.evaluate(async () => {
+  const m = await import("/assets/manifest.js");
+  const files = Object.values(m.ART).filter(Boolean);
+  const status = await Promise.all(files.map(async f => ({ f, ok: (await fetch("/assets/bones/" + f)).ok })));
+  return { files, failed: status.filter(x => !x.ok).map(x => x.f) };
+});
+check("配信用の骨画像は WebPでそろっている",
+  webpAssets.files.length === 8 && webpAssets.files.every(f => f.endsWith(".webp")) && webpAssets.failed.length === 0,
+  `${webpAssets.files.length}枚 / 読込失敗:${webpAssets.failed.join(",") || "なし"}`);
+
+await page.goto(URL.replace(/\/?$/, "/") + "triceratops-complete.html", { waitUntil: "networkidle0" });
+const triDemo = await page.evaluate(() => ({
+  path: location.pathname,
+  demo: new URLSearchParams(location.search).get("demo"),
+  digOn: document.querySelector("#screen-dig").classList.contains("is-on"),
+  name: document.querySelector("#dig .page-title")?.textContent,
+  count: document.querySelector("#dig .count")?.textContent,
+  full: !!document.querySelector("#dig .dino-full"),
+  total: document.querySelector("#dig-total")?.textContent
+}));
+check("トリケラトプス完成状態の専用ページが開く",
+  triDemo.demo === "triceratops-complete" && triDemo.digOn && triDemo.name === "トリケラトプス" &&
+  triDemo.count === "5/5" && triDemo.full && /^\s*5\s*\/\s*25\s*$/.test(triDemo.total),
+  JSON.stringify(triDemo));
 
 check("JSエラー・404なし", errors.length === 0, errors.slice(0, 3).join(" | "));
 

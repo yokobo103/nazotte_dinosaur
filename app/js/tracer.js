@@ -171,6 +171,7 @@ export class Tracer {
     for (let i = 1; i < ink.length; i++) len += dist(ink[i-1], ink[i]);
     if (len < MIN_LEN) return null;          // ただのタップ
 
+    // 点から「点の集まり」への距離
     const nearestTo = (q, pts)=>{
       let m = Infinity;
       for (const p of pts){
@@ -180,10 +181,27 @@ export class Tracer {
       return Math.sqrt(m);
     };
 
+    // 点から「折れ線」への距離。いちばん近い"点"までで測ると、
+    // 速く書いて記録点がまばらなときに、同じ道をなぞっても距離が大きく出る。
+    // 速く書く子や非力な端末が不利になるので、線分までの距離で測る。
+    const nearestToLine = (q, pts)=>{
+      let m = dist2(pts[0].x, pts[0].y, q.x, q.y);
+      for (let i = 1; i < pts.length; i++){
+        const a = pts[i-1], b = pts[i];
+        const vx = b.x - a.x, vy = b.y - a.y;
+        const L2 = vx*vx + vy*vy;
+        let t = L2 > 0 ? ((q.x - a.x)*vx + (q.y - a.y)*vy) / L2 : 0;
+        t = t < 0 ? 0 : t > 1 ? 1 : t;
+        const d = dist2(a.x + vx*t, a.y + vy*t, q.x, q.y);
+        if (d < m) m = d;
+      }
+      return Math.sqrt(m);
+    };
+
     // ① かたち：手本の点から自分の線までの距離。平均が点数、遠すぎる点の数がゲート
     let sumErr = 0, covered = 0;
     for (const q of s.pts){
-      const d = nearestTo(q, ink);
+      const d = nearestToLine(q, ink);
       sumErr += d;
       if (d <= R_COVER) covered++;
     }
@@ -201,8 +219,8 @@ export class Tracer {
     const onPath    = on / ink.length;
 
     // ③ 書きはじめ・書きおわりに届いたか
-    const dStart = nearestTo(s.pts[0], ink);
-    const dEnd   = nearestTo(s.pts[s.pts.length - 1], ink);
+    const dStart = nearestToLine(s.pts[0], ink);
+    const dEnd   = nearestToLine(s.pts[s.pts.length - 1], ink);
 
     // ④ 向き：はじめと終わりが手本と合っているか（逆向きを弾く）
     const m0 = s.pts[0], mN = s.pts[s.pts.length - 1];
@@ -264,6 +282,19 @@ export class Tracer {
   average(){
     if (!this.strokes.length) return 0;
     return Math.round(this.strokes.reduce((a,x)=>a+x.score, 0) / this.strokes.length);
+  }
+
+  /** 完成した字の「子どもが実際に通った線」を、109座標系のまま返す。
+   *  Canvas画像ではなく点列を残すので、あとから大きさ・色・背景を変えて再描画できる。 */
+  snapshot(){
+    if (!this.done) return null;
+    return this.strokes.map((stroke)=>({
+      color: stroke.color,
+      points: (stroke.ink || []).map((p)=>[
+        Math.round(p.x * 10) / 10,
+        Math.round(p.y * 10) / 10
+      ])
+    }));
   }
 
   /* ---------- おてほん ---------- */

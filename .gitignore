@@ -2,6 +2,7 @@ node_modules/
 npm-debug.log*
 
 # Generated test artifacts
-work/qa/
-work/qa-mobile/
-work/enc_test.txt
+work/
+
+# 配信用は WebP。PNG原画は work/art-src/ に置く
+app/assets/bones/*.png

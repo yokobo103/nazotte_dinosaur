@@ -112,7 +112,7 @@ for (const d of DEVICES) {
   check(d.name, "表のマスが44px以上", cell.w >= 44 && cell.h >= 44, `${cell.w}x${cell.h}`);
 
   const barOk = await page.evaluate(() => {
-    const els = [...document.querySelectorAll("#screen-table .mini, #screen-table .tab, #screen-table .seg-btn")];
+    const els = [...document.querySelectorAll("#screen-home .mini, #screen-home .tab, #screen-home .seg-btn")];
     return els.map(e => { const r = e.getBoundingClientRect(); return +Math.min(r.width, r.height).toFixed(1); });
   });
   check(d.name, "ヘッダ・タブが36px以上", Math.min(...barOk) >= 36, `いちばん小さい辺 ${Math.min(...barOk)}px`);
@@ -140,7 +140,7 @@ for (const d of DEVICES) {
   check(d.name, "ホーム画面に置ける（マニフェスト＋アイコン）", home.ok && home.hasApple, home.why);
 
   /* --- なぞり画面のおさまり --- */
-  await page.evaluate(() => window.__nazorin.openChar("あ", "table"));
+  await page.evaluate(() => window.__nazorin.openChar("あ"));
   await sleep(350);
   const layout = await page.evaluate(() => {
     const r = (s)=> { const b = document.querySelector(s).getBoundingClientRect();
@@ -185,7 +185,7 @@ for (const d of DEVICES) {
   await page.screenshot({ path: path.join(QA, `${slug}_2_trace.png`) });
 
   /* --- 手のひらが触れても壊れないか --- */
-  await page.evaluate(() => window.__nazorin.openChar("い", "table"));
+  await page.evaluate(() => window.__nazorin.openChar("い"));
   await sleep(300);
   const pts = await strokePts(page, 0, 3);
   const corner = await page.evaluate(() => {
@@ -201,7 +201,42 @@ for (const d of DEVICES) {
   check(d.name, "手のひらが触れても1画目が通る", palm.cur === 1,
     `cur=${palm.cur} 理由=${palm.reason || "なし"}`);
 
-  /* --- 画面回転で作り直されるか --- */
+  /* --- ほりだし画面も収まっているか --- */
+  // 見たい状態を作ってから見る（そろった1体・途中2体・手つかず2体）
+  await page.evaluate(() => {
+    const N = window.__nazorin, B = N.bones;
+    N.dig.slots = {
+      stegosaurus:   ["head","body","forelimb","hindlimb","tail"],
+      ankylosaurus:  ["body","forelimb","hindlimb","tail"],
+      brachiosaurus: ["body","tail"],
+      triceratops:   [], iguanodon: []
+    };
+    N.dig.done = ["stegosaurus"];
+    B.saveDig(N.dig);
+    N.renderDig();
+    document.querySelector('.nav-btn[data-go="dig"]').click();
+  });
+  await sleep(400);
+  const digFit = await page.evaluate(() => {
+    const slots = [...document.querySelectorAll("#dig .slot")];
+    const w = slots.map(e => e.getBoundingClientRect().width);
+    return {
+      over:  document.documentElement.scrollWidth - window.innerWidth,
+      slot:  w.length ? Math.min(...w) : 0,
+      slots: slots.length,
+      cards: document.querySelectorAll("#dig .page.dino").length
+    };
+  });
+  check(d.name, "ずかんが横にはみ出さない",
+    digFit.over <= 1 && digFit.cards === 5 && digFit.slot >= 40,
+    `はみ出し${digFit.over}px / カード${digFit.cards} / マス幅${digFit.slot.toFixed(0)}px`);
+  await page.screenshot({ path: path.join(QA, `${slug}_4_dig.png`) });
+  await page.evaluate(() => document.querySelector('.nav-btn[data-go="home"]').click());
+  await sleep(250);
+
+  /* --- 画面回転で作り直されるか（なぞり画面で見る） --- */
+  await page.evaluate(() => window.__nazorin.openChar("あ"));
+  await sleep(300);
   await page.setViewport({ width: d.h, height: d.w, deviceScaleFactor: d.dpr, isMobile: true, hasTouch: true });
   await sleep(500);
   const rot = await page.evaluate(() => {

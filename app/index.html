@@ -7,85 +7,127 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="なぞりん">
+<meta name="apple-mobile-web-app-title" content="きょうりゅうはっくつたい">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.92em%22 font-size=%2288%22>%E2%9C%8F%EF%B8%8F</text></svg>">
-<title>なぞりん — ひらがな・カタカナ</title>
+<title>よこぼの なぞって！きょうりゅうはっくつたい</title>
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-<!-- ===== ひょう(50音表) ===== -->
-<section id="screen-table" class="screen is-on">
-  <header class="topbar">
-    <h1 class="logo">✏️ なぞりん</h1>
-    <button id="btn-book" class="mini book">📖 <span id="book-count">0</span></button>
-    <button id="btn-reset" class="mini" title="さいしょから">🗑</button>
+<!-- ===== はっくつベース（ホーム） ===== -->
+<section id="screen-home" class="screen is-on">
+  <header class="topbar home-topbar">
+    <div class="brand">
+      <span class="brand-owner">よこぼの</span>
+      <h1 class="logo"><span>なぞって！</span>きょうりゅう はっくつたい</h1>
+    </div>
+    <button id="btn-reset" class="mini icon" title="さいしょから">⚙</button>
   </header>
 
-  <div class="seg" id="kana-switch">
-    <button class="seg-btn is-on" data-kana="hira">ひらがな</button>
-    <button class="seg-btn" data-kana="kata">カタカナ</button>
-  </div>
+  <section class="mission-card" aria-labelledby="mission-title">
+    <div class="mission-copy">
+      <span class="eyebrow" id="mission-mode">ひらがなの はっくつミッション</span>
+      <h2 id="mission-title">5もじ なぞって<br><strong>ホネを ほりだそう！</strong></h2>
+      <p id="home-bones" class="mission-status"></p>
+    </div>
+    <div class="dig-mark" aria-hidden="true">
+      <span class="dig-sun">✦</span>
+      <span class="dig-bone">🦴</span>
+      <span class="dig-soil"></span>
+    </div>
+    <button id="btn-start" class="start">
+      <span class="start-main">たんけんに でる！ <b>→</b></span>
+      <span class="start-sub" id="start-sub"></span>
+    </button>
+  </section>
 
-  <div class="tabs" id="tabs">
-    <button class="tab is-on" data-set="seion">あいうえお</button>
-    <button class="tab" data-set="dakuon">だくおん</button>
-    <button class="tab" data-set="small">ちいさいじ</button>
-  </div>
+  <section class="practice-book" aria-label="れんしゅうする文字">
+    <div class="practice-head">
+      <div>
+        <span class="eyebrow">れんしゅうちょう</span>
+        <h2>なぞる もじを えらぶ</h2>
+      </div>
+      <p class="progress" id="progress"></p>
+    </div>
 
-  <div id="grid" class="grid"></div>
+    <div class="seg" id="kana-switch">
+      <button class="seg-btn is-on" data-kana="hira">ひらがな</button>
+      <button class="seg-btn" data-kana="kata">カタカナ</button>
+    </div>
 
-  <p class="progress" id="progress"></p>
+    <div class="tabs" id="tabs">
+      <button class="tab is-on" data-set="seion">あいうえお</button>
+      <button class="tab" data-set="dakuon">だくおん</button>
+      <button class="tab" data-set="small">ちいさいじ</button>
+    </div>
+
+    <div id="grid" class="grid"></div>
+  </section>
+
+  <nav class="nav">
+    <button class="nav-btn" data-go="dig"><span class="nav-icon">🦴</span><span><b>はっくつずかん</b><small>あつめた ホネを みる</small></span><span class="nav-arrow">→</span></button>
+  </nav>
   <p class="credit">もじの かたち: <a href="https://kanjivg.tagaini.net" target="_blank" rel="noopener">KanjiVG</a> (CC BY-SA 3.0)</p>
 </section>
 
 <!-- ===== なぞる ===== -->
 <section id="screen-trace" class="screen">
   <header class="topbar">
-    <button id="btn-back" class="mini">← もどる</button>
-    <div class="word" id="word"></div>
-    <button id="btn-say" class="mini" title="よみあげ">🔊</button>
+    <button id="btn-back" class="mini back" aria-label="もどる">←</button>
+    <div class="trace-title"><span>この もじを なぞろう</span><div class="word" id="word"></div></div>
+    <button id="btn-say" class="mini icon" title="よみあげ">🔊</button>
   </header>
 
+  <div class="sess" id="sess"></div>
+
   <div class="stage">
-    <div class="canvas-wrap">
+    <div class="canvas-wrap" aria-label="なぞり書きのマス">
+      <span class="paper-clip" aria-hidden="true"></span>
       <canvas id="canvas"></canvas>
       <div id="praise" class="praise"></div>
     </div>
   </div>
 
+  <div id="bone-pop" class="bone-pop"></div>
+
   <div class="controls">
-    <button id="btn-demo" class="btn ghost">👀 おてほん</button>
-    <button id="btn-again" class="btn ghost">↺ もういちど</button>
-    <button id="btn-next" class="btn primary">つぎ →</button>
+    <button id="btn-demo" class="btn ghost">▶ おてほん</button>
+    <button id="btn-again" class="btn ghost">↺ かきなおす</button>
+    <button id="btn-next" class="btn primary">つぎへ →</button>
   </div>
 </section>
 
-<!-- ===== ずかん ===== -->
-<section id="screen-book" class="screen">
+<!-- ===== きょうりゅう ずかん ===== -->
+<section id="screen-dig" class="screen">
   <header class="topbar">
-    <button id="btn-book-back" class="mini">← もどる</button>
-    <h2 class="logo book-title">📖 ずかん</h2>
-    <span class="mini ghosty" id="book-total">0</span>
+    <button class="mini back nav-btn-inline" data-go="home" aria-label="もどる">←</button>
+    <div class="book-heading"><span>はっくつきろく</span><h2 class="logo">🦴 はっくつずかん</h2></div>
+    <span class="bone-total" id="dig-total"></span>
   </header>
 
-  <div class="seg" id="book-switch">
-    <button class="seg-btn is-on" data-kana="hira">ひらがな</button>
-    <button class="seg-btn" data-kana="kata">カタカナ</button>
-  </div>
+  <div class="dig-intro"><strong>ホネを 5こ あつめると<br>ぜんしんこっかくが かんせい！</strong><span aria-hidden="true">⛏️</span></div>
 
-  <div id="book" class="book"></div>
+  <div id="dig" class="dig"></div>
+
+  <nav class="nav">
+    <button class="nav-btn" data-go="home"><span class="nav-icon">✏️</span><span><b>はっくつに もどる</b><small>5もじ なぞって ホネを さがす</small></span><span class="nav-arrow">→</span></button>
+  </nav>
+  <p class="credit" id="dig-note"></p>
 </section>
 
-<!-- ===== ごほうび（行コンプリート） ===== -->
+<!-- ===== ごほうび ===== -->
 <div id="reward" class="reward">
   <div class="reward-card">
+    <p class="reward-kicker" id="reward-kicker"></p>
     <p class="reward-title" id="reward-title"></p>
+    <div class="reward-handwriting" id="reward-handwriting"></div>
     <div class="reward-emojis" id="reward-emojis"></div>
-    <p class="reward-sub">ずかんに 1ページ ふえた！</p>
-    <button class="btn primary" id="reward-ok">やった！</button>
+    <div class="reward-art" id="reward-art"></div>
+    <div class="reward-achievements" id="reward-achievements"></div>
+    <p class="reward-sub" id="reward-sub"></p>
+    <button class="btn primary" id="reward-ok">つぎへ →</button>
   </div>
 </div>
 
