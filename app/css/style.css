@@ -113,3 +113,29 @@ button{font:inherit}
   box-shadow:0 2px 0 var(--line);
 }
 .sheet-note{font-size:12px;color:var(--sub);margin:0 0 14px}
+
+/* ---- きょうりゅう詳細：きみの きろく ---- */
+/* もとは「これから ここに ふやせるよ」の空箱だった。
+   掘り出した日と、そのとき書いた文字（本人の筆跡）が入る */
+.detail-record{
+  background:var(--paper);border-radius:20px;padding:14px 16px 16px;
+  box-shadow:0 3px 0 var(--line);margin-bottom:12px;
+}
+.detail-record h3{font-size:16px;margin:2px 0 8px}
+.record-day{font-size:14px;color:var(--accent);margin:0 0 4px}
+.record-lead{font-size:12px;color:var(--sub);margin:0 0 10px}
+.record-chars{display:flex;flex-wrap:wrap;gap:6px}
+.record-chars canvas{background:#fff;border-radius:12px;box-shadow:0 2px 0 var(--line)}
+.record-char{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:44px;height:44px;background:#fff;border-radius:12px;font-size:22px;
+  box-shadow:0 2px 0 var(--line);
+}
+
+/* ---- とちゅうでやめたときの「さいしょから」 ---- */
+.restart{
+  display:block;width:100%;margin-top:8px;border:none;border-radius:14px;
+  padding:10px 8px;font-family:inherit;font-size:13px;cursor:pointer;
+  background:transparent;color:var(--sub);text-decoration:underline;
+}
+.restart.is-hidden{display:none}

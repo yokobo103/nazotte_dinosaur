@@ -137,7 +137,7 @@ function renderGrid(){
   const kanaLabel = curKana === "kata" ? "カタカナ" : "ひらがな";
   const setLabel = { seion:"きほん", dakuon:"だくおん", small:"ちいさいじ" }[curSet];
   el.missionMode.textContent = `${kanaLabel}の はっくつミッション`;
-  el.startSub.textContent = `${kanaLabel}・${setLabel}を ${SET}もじ かくと ホネが 1こ！`;
+  refreshStart();
   const bones = B.boneCount(dig);
   el.homeBones.textContent = bones >= B.TOTAL_BONES()
     ? "ぜんぶの ホネを はっくつしたよ！"
@@ -190,7 +190,28 @@ function pickChars(){
   return [...shuffle(fresh), ...shuffle(weak), ...shuffle(rest)].slice(0, SET);
 }
 
+/** とまっているミッションがあれば、ホームのボタンを「つづきから」にする */
+function refreshStart(){
+  const held = session && session.mode === "mission" && session.paused;
+  $("#start-main").innerHTML = held
+    ? `つづきから <b>→</b>`
+    : `たんけんに でる！ <b>→</b>`;
+  const kanaLabel = curKana === "kata" ? "カタカナ" : "ひらがな";
+  const setLabel = { seion:"きほん", dakuon:"だくおん", small:"ちいさいじ" }[curSet];
+  $("#start-sub").textContent = held
+    ? `${session.i + 1}もじめの とちゅうから`
+    : `${kanaLabel}・${setLabel}を ${SET}もじ かくと ホネが 1こ！`;
+  $("#btn-restart").classList.toggle("is-hidden", !held);
+}
+
+$("#btn-restart").addEventListener("click", ()=>{
+  sfx.unlock(); sfx.pop();
+  session = null;
+  startSession();
+});
+
 function startSession(){
+  session = null;
   const chars = pickChars();
   if (!chars.length) return;
   // 開始時の文字種・分類を固定する。終了記録もこの値を使い、ひらがなとカタカナで同じルールにする。
@@ -207,12 +228,21 @@ function startPractice(ch){
   session = { mode: "practice", chars, i: 0, rep: 0, attempts: {}, kana: curKana, set: curSet };
   openChar(chars[0]);
 }
-$("#btn-start").addEventListener("click", ()=>{ sfx.unlock(); sfx.pop(); startSession(); });
+$("#btn-start").addEventListener("click", ()=>{
+  sfx.unlock(); sfx.pop();
+  if (session && session.mode === "mission" && session.paused){
+    session.paused = false;
+    openChar(session.chars[session.i]);
+    return;
+  }
+  startSession();
+});
 
 function renderSess(){
   // れんしゅう中は「つぎ」を隠す。押すと書かずに飛ばせてしまう
-  $("#btn-next").classList.toggle("is-hidden", !!session);
-  if (!session){ el.sess.classList.remove("is-on"); el.sess.innerHTML = ""; return; }
+  const active = session && !session.paused;
+  $("#btn-next").classList.toggle("is-hidden", !!active);
+  if (!active){ el.sess.classList.remove("is-on"); el.sess.innerHTML = ""; return; }
   el.sess.classList.add("is-on");
   const left = REPS - session.rep;
   if (session.mode === "practice"){
@@ -257,7 +287,14 @@ function fit(){
 window.addEventListener("resize", ()=>{ if (el.trace.classList.contains("is-on")) fit(); });
 window.addEventListener("orientationchange", ()=> setTimeout(fit, 250));
 
-$("#btn-back").addEventListener("click", ()=>{ sfx.pop(); session = null; hidePraise(); show(el.home); renderGrid(); });
+// 5さいの誤タップで、3回×何文字ぶんかが消えていた。
+// やめるのではなく「とめておく」。ホームから続きに戻れる。
+$("#btn-back").addEventListener("click", ()=>{
+  sfx.pop();
+  if (session && session.mode === "mission") session.paused = true;
+  else session = null;
+  hidePraise(); show(el.home); renderGrid();
+});
 $("#btn-say").addEventListener("click", ()=>{ sfx.unlock(); say(curChar); });
 $("#btn-demo").addEventListener("click", ()=>{ sfx.unlock(); hidePraise(); tracer.demo(); });
 $("#btn-again").addEventListener("click", ()=>{
@@ -267,7 +304,7 @@ $("#btn-again").addEventListener("click", ()=>{
 });
 $("#btn-next").addEventListener("click", ()=>{
   sfx.unlock(); sfx.pop(); hidePraise();
-  if (session) return advance();
+  if (session && !session.paused) return advance();
   const list = Object.values(SETS[kanaOf(curChar)]).flat().filter(Boolean);
   openChar(list[(list.indexOf(curChar) + 1) % list.length]);
 });
@@ -585,7 +622,7 @@ tracer.on.charDone = (avg)=>{
   }, 160);
 
   // れんしゅう中はひとりでに進む（子どもに「つぎ」を押させ続けない）
-  if (session) setTimeout(()=>{ if (session) advance(); }, 1700);
+  if (session && !session.paused) setTimeout(()=>{ if (session && !session.paused) advance(); }, 1700);
 };
 
 /* ================= ごほうび画面 ================= */
@@ -635,6 +672,55 @@ function detailUrl(id){
   return url.pathname + url.search + url.hash;
 }
 
+/** その恐竜を掘り出したときの記録。日付と、そのとき書いた文字を出す。
+ *  パーツ1つぶんの記録（マスを押すと出るもの）の、恐竜まるごと版。 */
+function renderDinoRecord(dino){
+  const logs = B.ALL_PARTS.map(part => B.foundLog(dig, dino, part)).filter(Boolean);
+  const dayEl   = $("#dino-record-day");
+  const leadEl  = $("#dino-record-lead");
+  const charsEl = $("#dino-record-chars");
+  charsEl.innerHTML = "";
+
+  if (!logs.length){
+    dayEl.textContent = "";
+    leadEl.textContent = "きろくが のこっていない きょうりゅうだよ";
+    return;
+  }
+
+  const days = logs.map(l => l.day).filter(Boolean).sort();
+  dayEl.textContent = days.length
+    ? `${MONTH_DAY(days[days.length-1]) || days[days.length-1]}に かんせい`
+    : "";
+
+  // 5本ぶんの文字。同じ字は1回だけ
+  const seen = new Set(), chars = [];
+  for (const l of logs) for (const ch of (l.chars || [])) if (!seen.has(ch)){ seen.add(ch); chars.push(ch); }
+
+  if (!chars.length){
+    leadEl.textContent = days.length ? "" : "きろくが のこっていない きょうりゅうだよ";
+    return;
+  }
+  leadEl.textContent = `この ${chars.length}もじを かいて ほりだしたよ`;
+
+  // 筆跡が残っていれば その子が書いた線、無ければ文字だけ
+  const byChar = new Map();
+  for (const l of logs){
+    const rec = l.sid && handwriting.sessions.find(r => r.id === l.sid);
+    for (const sample of (rec && rec.characters) || []){
+      if (sample && sample.ch && !byChar.has(sample.ch)) byChar.set(sample.ch, sample);
+    }
+  }
+  for (const ch of chars){
+    const sample = byChar.get(ch);
+    if (sample && (sample.strokes || []).length) charsEl.appendChild(handwritingCanvas(sample));
+    else {
+      const b = document.createElement("span");
+      b.className = "record-char"; b.textContent = ch;
+      charsEl.appendChild(b);
+    }
+  }
+}
+
 function renderDinoDetail(view = "bone"){
   if (!detailDino || !B.isComplete(dig, detailDino)) return false;
   const data = detailDino.detail || {};
@@ -667,6 +753,7 @@ function renderDinoDetail(view = "bone"){
     note.textContent = "イラストが できたら、ここで きりかえて みられるよ。";
   }
 
+  renderDinoRecord(detailDino);
   $("#dino-detail-description").textContent = data.description || detailDino.fact || "くわしい せつめいは じゅんびちゅうです。";
   const facts = $("#dino-detail-facts");
   facts.innerHTML = "";

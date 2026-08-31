@@ -38,9 +38,10 @@
       <span class="dig-soil"></span>
     </div>
     <button id="btn-start" class="start">
-      <span class="start-main">たんけんに でる！ <b>→</b></span>
+      <span class="start-main" id="start-main">たんけんに でる！ <b>→</b></span>
       <span class="start-sub" id="start-sub"></span>
     </button>
+    <button id="btn-restart" class="restart is-hidden">さいしょから やりなおす</button>
   </section>
 
   <section class="practice-book" aria-label="れんしゅうする文字">
@@ -148,9 +149,12 @@
       <a id="dino-detail-source" class="detail-source" target="_blank" rel="noopener">しらべた ところ ↗</a>
     </section>
 
-    <section class="detail-future" aria-label="これから ふえる きろく">
-      <span>🔍 もっと しらべる きろく</span>
-      <p>はっけんした もじや かんせいびなどを、これから ここに ふやせるよ。</p>
+    <section class="detail-record" aria-labelledby="dino-record-title">
+      <span class="eyebrow">きみの きろく</span>
+      <h3 id="dino-record-title">この きょうりゅうを ほりだした とき</h3>
+      <p class="record-day" id="dino-record-day"></p>
+      <p class="record-lead" id="dino-record-lead"></p>
+      <div class="record-chars" id="dino-record-chars"></div>
     </section>
   </main>
 

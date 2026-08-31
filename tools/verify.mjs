@@ -605,8 +605,8 @@ check("そろった→掘りかけ→手つかず の順にならぶ",
 
 /* ================= 7. データ ================= */
 const dataOk = await page.evaluate(async () => {
-  const m = await import("/data/kana.js");
-  const w = await import("/js/words.js");
+  const m = await import("./data/kana.js");
+  const w = await import("./js/words.js");
   const t = window.__nazorin.tracer;
   const bad = [];
   for (const [ch, d] of Object.entries(m.KANA)) {
@@ -628,8 +628,8 @@ check("表にならぶ字は ことばも形もそろっている",
 
 // 仮の骨が描画枠からはみ出していないか（はみ出すと黙って切り取られる）
 const strayArt = await page.evaluate(async () => {
-  const art = await import("/js/boneart.js");
-  const m   = await import("/assets/manifest.js");
+  const art = await import("./js/boneart.js");
+  const m   = await import("./assets/manifest.js");
   const over = [];
   for (const key of Object.keys(m.ART)){
     const cv = art.drawBone(key, 200);
@@ -647,9 +647,9 @@ const strayArt = await page.evaluate(async () => {
 check("仮の骨が枠からはみ出していない", strayArt.length === 0, strayArt.join(",") || "なし");
 
 const webpAssets = await page.evaluate(async () => {
-  const m = await import("/assets/manifest.js");
+  const m = await import("./assets/manifest.js");
   const files = Object.values(m.ART).filter(Boolean);
-  const status = await Promise.all(files.map(async f => ({ f, ok: (await fetch("/assets/bones/" + f)).ok })));
+  const status = await Promise.all(files.map(async f => ({ f, ok: (await fetch("./assets/bones/" + f)).ok })));
   return { files, failed: status.filter(x => !x.ok).map(x => x.f) };
 });
 check("配信用の骨画像は WebPでそろっている",
@@ -657,9 +657,9 @@ check("配信用の骨画像は WebPでそろっている",
   `${webpAssets.files.length}枚 / 読込失敗:${webpAssets.failed.join(",") || "なし"}`);
 
 const restorations = await page.evaluate(async () => {
-  const B = await import("/js/bones.js");
+  const B = await import("./js/bones.js");
   const files = B.DINOS.map(d => d.detail && d.detail.restorationArt).filter(Boolean);
-  const status = await Promise.all(files.map(async f => ({ f, ok:(await fetch("/assets/dinosaurs/" + f)).ok })));
+  const status = await Promise.all(files.map(async f => ({ f, ok:(await fetch("./assets/dinosaurs/" + f)).ok })));
   return { files, failed:status.filter(x => !x.ok).map(x => x.f), facts:B.DINOS.map(d => Object.values(d.detail.facts).filter(Boolean).length) };
 });
 check("6体の復元画は軽量WebPでそろっている",
@@ -667,7 +667,7 @@ check("6体の復元画は軽量WebPでそろっている",
   `${restorations.files.length}枚 / 読込失敗:${restorations.failed.join(",") || "なし"}`);
 check("6体に4項目の基本情報がある", restorations.facts.every(n => n === 4), restorations.facts.join(","));
 const periodLabels = await page.evaluate(async () => {
-  const B = await import("/js/bones.js");
+  const B = await import("./js/bones.js");
   return B.DINOS.map(d => d.detail.facts.period);
 });
 check("生きていた年代に漢字やカタカナが残っていない",
@@ -715,11 +715,69 @@ check("ティラノの4部位は二足恐竜共通セットを使う",
     addedDinoDemos.find(d => d.id === "tyrannosaurus").parts.some(src => src.endsWith(file))),
   addedDinoDemos.find(d => d.id === "tyrannosaurus").parts.join(","));
 
+/* --- とちゅうでやめても つづきから戻れる（5さいの誤タップ対策） --- */
+await settleRewards(page);
+await page.evaluate(() => { const N = window.__nazorin; N.show(N.el.home); N.startSession(); });
+await sleep(400);
+{
+  // 2文字目の途中まで進める
+  const n = await page.evaluate(() => window.__nazorin.tracer.strokes.length);
+  for (let i = 0; i < n; i++) await traceStroke(page, i, { jitter: 3 });
+  await sleep(1900);
+}
+const midway = await page.evaluate(() => {
+  const s = window.__nazorin.session;
+  return s ? { i: s.i, rep: s.rep, chars: s.chars.length } : null;
+});
+check("れんしゅうが すすんでいる", !!midway && (midway.i > 0 || midway.rep > 0),
+  JSON.stringify(midway));
+
+await page.evaluate(() => document.querySelector("#btn-back").click());
+await sleep(350);
+const held = await page.evaluate(() => ({
+  home:    document.querySelector("#screen-home").classList.contains("is-on"),
+  alive:   !!window.__nazorin.session,
+  paused:  !!(window.__nazorin.session && window.__nazorin.session.paused),
+  label:   document.querySelector("#start-main").textContent.trim(),
+  sub:     document.querySelector("#start-sub").textContent.trim(),
+  restart: !document.querySelector("#btn-restart").classList.contains("is-hidden")
+}));
+check("とちゅうで もどっても れんしゅうが消えない",
+  held.home && held.alive && held.paused, JSON.stringify(held));
+check("ホームが「つづきから」になる",
+  /つづきから/.test(held.label) && /もじめ/.test(held.sub) && held.restart,
+  `${held.label} / ${held.sub}`);
+
+await page.evaluate(() => document.querySelector("#btn-start").click());
+await sleep(400);
+const resumed = await page.evaluate(() => {
+  const s = window.__nazorin.session;
+  return { trace: document.querySelector("#screen-trace").classList.contains("is-on"),
+           i: s && s.i, rep: s && s.rep, paused: !!(s && s.paused) };
+});
+check("つづきから おなじ場所で 再開する",
+  resumed.trace && !resumed.paused && resumed.i === midway.i && resumed.rep === midway.rep,
+  JSON.stringify(resumed));
+
+await page.evaluate(() => document.querySelector("#btn-back").click());
+await sleep(300);
+await page.evaluate(() => document.querySelector("#btn-restart").click());
+await sleep(400);
+const restarted = await page.evaluate(() => {
+  const s = window.__nazorin.session;
+  return { i: s && s.i, rep: s && s.rep, paused: !!(s && s.paused) };
+});
+check("「さいしょから」で 最初にもどる",
+  restarted.i === 0 && restarted.rep === 0 && !restarted.paused, JSON.stringify(restarted));
+await page.evaluate(() => { window.__nazorin.session && document.querySelector("#btn-back").click(); });
+await sleep(250);
+await page.evaluate(() => { const N = window.__nazorin; N.show(N.el.home); document.querySelector("#btn-restart").classList.add("is-hidden"); });
+
 /* --- かたちを見ているか（5さいが「す」を「ナ」のように書いて通った） --- */
 const shapeCheck = await page.evaluate(async () => {
   const t = window.__nazorin.tracer;
-  const m = await import("/data/kana.js");
-  const w = await import("/js/words.js");
+  const m = await import("./data/kana.js");
+  const w = await import("./js/words.js");
   const chars = [...new Set([...Object.values(w.SETS.hira).flat(),
                              ...Object.values(w.SETS.kata).flat()])].filter(Boolean);
   // その画を「始点から終点まで まっすぐ」引いただけの線
