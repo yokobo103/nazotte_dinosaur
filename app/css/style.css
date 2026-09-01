@@ -29,9 +29,11 @@ button{font:inherit}
 .mission-card::before{content:"";position:absolute;inset:auto -20px -28px -20px;height:62px;border-radius:50% 50% 0 0;background:#ad7746;opacity:.16}
 .mission-copy{position:relative;z-index:1;min-width:0}.eyebrow{display:block;color:var(--teal-dark);font-size:10px;font-weight:900;letter-spacing:.08em}
 .mission-copy h2{margin:5px 0 5px;font-size:clamp(18px,5.1vw,23px);line-height:1.28}.mission-copy h2 strong{color:var(--orange);font-weight:900}.mission-status{margin:0;color:var(--sub);font-size:11px;font-weight:700}
-.dig-mark{position:relative;min-height:80px}.dig-sun{position:absolute;right:4px;top:-4px;color:var(--gold);font-size:28px}.dig-bone{position:absolute;right:13px;top:21px;z-index:2;font-size:47px;filter:drop-shadow(0 3px 0 rgba(74,49,27,.18));transform:rotate(-12deg)}
-.dig-doc{position:absolute;right:-8px;bottom:4px;z-index:2;width:122px;height:auto;filter:drop-shadow(0 3px 0 rgba(74,49,27,.16))}
-.dig-soil{position:absolute;right:-18px;bottom:-11px;width:118px;height:43px;border-radius:50% 50% 18px 18px;background:#9c6940;box-shadow:inset 0 7px 0 #c8945f}
+.dig-mark{position:relative;min-height:80px}
+/* 土の山をやめた。Dr.よこぼの あごが山に埋まって、顔だけ置いてあるように見えていた。
+   なぞる画面の相棒と同じ「うすい影」にそろえる */
+.dig-doc{position:absolute;left:50%;bottom:6px;z-index:2;width:122px;height:auto;transform:translateX(-50%);filter:drop-shadow(0 4px 0 rgba(74,49,27,.14))}
+.dig-soil{position:absolute;left:50%;bottom:4px;transform:translateX(-50%);width:92px;height:19px;border-radius:50%;background:#bc9463;opacity:.34}
 .start{position:relative;z-index:2;grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:2px;flex-direction:column;border:0;border-radius:18px;padding:11px 12px;margin-top:7px;min-height:57px;background:var(--orange);color:#fff;cursor:pointer;box-shadow:0 4px 0 var(--orange-dark)}
 .start-main{font-size:19px;font-weight:900;letter-spacing:.03em}.start-main b{display:inline-block;margin-left:6px;font-size:23px}.start-sub{font-size:10px;font-weight:700;opacity:.9}
 
@@ -77,7 +79,7 @@ button{font:inherit}
 
 .confetti{position:fixed;inset:0;z-index:70;display:none;pointer-events:none}.confetti.is-on{display:block}#measure{position:absolute;visibility:hidden}
 @media (min-width:520px){.screen{padding-left:18px;padding-right:18px}.cell{font-size:34px}.slot-label{font-size:10px}}
-@media (max-height:720px) and (orientation:portrait){.home-topbar{min-height:60px}.mission-card{padding:10px 12px 9px}.mission-copy h2{font-size:17px}.dig-mark{min-height:63px}.dig-bone{font-size:39px}.start{min-height:50px;padding:8px;margin-top:4px}.practice-book{margin-top:7px}.practice-head{padding-bottom:5px}.credit{display:none}}
+@media (max-height:720px) and (orientation:portrait){.home-topbar{min-height:60px}.mission-card{padding:10px 12px 9px}.mission-copy h2{font-size:17px}.dig-mark{min-height:63px}.dig-bone{font-size:39px}.start{min-height:50px;padding:8px;margin-top:4px}.practice-book{margin-top:7px}.practice-head{padding-bottom:5px}.credit{font-size:7px}}
 @media (max-height:720px) and (orientation:portrait){#screen-trace .topbar{min-height:55px;padding-top:5px}.word{min-height:48px;padding-bottom:2px}.trace-char{font-size:39px}.trace-example{padding:5px 9px}.trace-example span{font-size:21px}.trace-example b{font-size:13px}.sess{min-height:39px;padding:3px 7px 5px}.stage{padding:4px 0}.controls{padding-top:7px}.controls .btn{min-height:50px}}
 @media (max-width:520px) and (orientation:portrait){#screen-trace .stage{align-items:flex-start;padding-top:18px}}
 @media (orientation:landscape) and (max-height:620px){#screen-trace.is-on{display:grid;grid-template-columns:1fr 148px;grid-template-rows:auto 1fr;column-gap:10px}#screen-trace .topbar{grid-column:1/3;grid-row:1}#screen-trace>.word{display:none}#screen-trace .sess{position:absolute;left:50%;top:51px;z-index:4;transform:translateX(-50%)}#screen-trace .stage{grid-column:1;grid-row:2;min-height:0}#screen-trace .controls{grid-column:2;grid-row:2;flex-direction:column;justify-content:center;padding:0 0 6px}#screen-trace .controls .btn{flex:0 0 auto}}

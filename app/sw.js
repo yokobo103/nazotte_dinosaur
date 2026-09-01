@@ -1,6 +1,6 @@
 // 自動生成。手で編集しない（作り直し: node tools/build_sw.mjs）
 // 電波が無くても開けるように、アプリ一式を先に取っておく。
-const VERSION = "e2eb3afa6a";
+const VERSION = "59c59bb061";
 const CACHE = "nazorin-" + VERSION;
 
 const FILES = [
@@ -48,6 +48,8 @@ const FILES = [
   "assets/dinosaurs/triceratops_restoration.webp",
   "assets/dinosaurs/tyrannosaurus_restoration.webp",
   "assets/manifest.js",
+  "assets/voice.json",
+  "assets/voice.opus",
   "css/style.css",
   "data/kana.js",
   "index.html",

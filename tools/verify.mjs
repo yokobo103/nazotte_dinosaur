@@ -901,6 +901,65 @@ check("まっすぐ引くだけで通るのは もともと直線の画だけ",
   await page.evaluate(() => { const N = window.__nazorin; N.show(N.el.home); });
 }
 
+/* ================= 読み上げの声 ================= */
+// 焼いた声（VOICEVOX:春歌ナナ）が全字ぶんそろっているか、鳴る長さがあるか。
+// 無音を焼き損じても画面には何も出ないので、静かに壊れる側＝検査で止める。
+{
+  const APP2 = path.join(HERE, "..", "app");
+  const idxFile = path.join(APP2, "assets", "voice.json");
+  const opFile  = path.join(APP2, "assets", "voice.opus");
+  const has = fs.existsSync(idxFile) && fs.existsSync(opFile);
+  check("焼いた声が置いてある", has,
+    has ? `${Math.round(fs.statSync(opFile).size/1024)}KB` : "まだ焼いていない");
+
+  if (has){
+    const idx = JSON.parse(fs.readFileSync(idxFile, "utf8"));
+    const need = await page.evaluate(async () => {
+      const w = await import("./js/words.js");
+      const B = await import("./js/bones.js");
+      const chars = [];
+      for (const kana of ["hira", "kata"])
+        for (const set of Object.values(w.SETS[kana]))
+          for (const ch of set.flat()) if (ch) chars.push(ch);
+      const rewards = [];
+      for (const d of B.DINOS){
+        for (const p2 of B.ALL_PARTS) rewards.push(`f:${d.id}:${p2}`);
+        rewards.push(`r:${d.id}`);
+      }
+      return { chars, rewards };
+    });
+    const missChar = need.chars.filter(ch => !idx.clips["c:" + ch]);
+    check("50音表から出るぜんぶの字に 読みがある",
+      missChar.length === 0 && need.chars.length >= 160,
+      `${need.chars.length}字 / 欠け ${missChar.length}`);
+
+    const fixed = ["p:1","p:2","p:3","w:reverse","w:start","w:short","w:off","w:shape","w:again",
+                   "s:set","s:complete", ...need.rewards];
+    const missFixed = fixed.filter(id => !idx.clips[id]);
+    check("ほめことば・やりなおしの理由・ごほうびの声もそろっている",
+      missFixed.length === 0, missFixed.length ? missFixed.slice(0,5).join(" ") : `${fixed.length}本`);
+
+    // 「を」「づ」のように ことばの無い字は1拍しかなく、それでも0.29秒ある。
+    // 0.15秒を切るのは焼けていないとき
+    const short = Object.entries(idx.clips).filter(([, c]) => c[1] < 0.15);
+    check("焼けていない（0.15秒未満）ものが無い",
+      short.length === 0, short.length ? short.slice(0,5).map(x=>x[0]).join(" ") : "なし");
+    // 「ン」の読みが「ん」だけのとき、VOICEVOXは音の無いWAVを返していた。
+    // 長さは普通なので、波形を見ないと気づけない
+    check("音が入っていない焼き損じが無い",
+      Array.isArray(idx.silent) && idx.silent.length === 0,
+      (idx.silent || ["（記録なし）"]).join(" ") || "なし");
+
+    const last = Object.values(idx.clips).reduce((a, c) => Math.max(a, c[0] + c[1]), 0);
+    check("位置がファイルの長さの中に収まっている",
+      last <= idx.total + 0.05, `いちばん後ろ ${last.toFixed(1)}秒 / 全体 ${idx.total.toFixed(1)}秒`);
+
+    check("クレジットが画面に出ている",
+      (await page.$eval("#voice-credit", e => e.textContent)).includes(idx.credit),
+      idx.credit);
+  }
+}
+
 /* ================= しょうじょう ================= */
 {
   const before = await page.evaluate(() => {
@@ -985,9 +1044,9 @@ check("まっすぐ引くだけで通るのは もともと直線の画だけ",
   const s = swScan();
   check("sw.js が最新（node tools/build_sw.mjs を回し忘れていない）",
     s.version === writtenVersion(), `いま ${s.version} / 書いてある ${writtenVersion()}`);
-  // キャラの絵（キービジュアル・ロゴ・表情・しょうじょう）で 440KB ふえた。
-  // 初回だけ落ちて、あとはオフラインで動く一式ぶん。
-  check("配信サイズが 2.4MB を超えていない", s.total < 2.4 * 1024 * 1024,
+  // キャラの絵で 458KB、焼いた声で 806KB ふえた。初回だけ落ちて、あとはオフラインで動く。
+  // voice.m4a（Opusが読めない端末むけ）は先取りしていないので、ここには入らない。
+  check("配信サイズが 3.2MB を超えていない", s.total < 3.2 * 1024 * 1024,
     `${(s.total/1024).toFixed(0)}KB / ${s.files.length}ファイル`);
 }
 

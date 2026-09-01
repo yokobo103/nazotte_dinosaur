@@ -15,7 +15,8 @@ const OUT  = path.join(APP, "sw.js");
 // アイコンはページからは使わない（OSが別に取りに行く）。ニャビットの顔にしてから
 // 4枚で276KBあり、一式の1割をオフライン用に持つ意味がない
 const SKIP = new Set(["sw.js"]);
-const SKIP_RE = /(-complete\.html|^icons\/)/;
+// voice.m4a は「Opus が読めない端末だけが落とす」控え。先取りすると2重に持つことになる
+const SKIP_RE = /(-complete\.html|^icons\/|^assets\/voice\.m4a$)/;
 
 // テキストは改行をそろえてから測る。Windowsで作ると CRLF、CIは LF で
 // チェックアウトされるので、そろえないと同じ中身でも版が食い違う

@@ -9,6 +9,7 @@ export function unlock(){
     ctx = new AC();
   }
   if (ctx.state === "suspended") ctx.resume();
+  loadVoice();
 }
 
 function tone({freq=440, dur=.18, type="sine", gain=.18, at=0, slideTo=null}){
@@ -70,3 +71,61 @@ export function retry(){
 export function pop(){
   tone({freq:880, dur:.06, type:"square", gain:.05});
 }
+
+/* ================= 読み上げ =================
+   VOICEVOX:春歌ナナ（CM動画パイプラインでニャビットに使っている声）で焼いた1本を、
+   位置を指定して鳴らす。<audio> を200個持つと iOS で重いので、
+   1つのバッファをデコードして region 再生にしている。
+   ファイルが無い・その文が焼かれていないときは false を返す＝呼ぶ側が端末の合成音声に落ちる。 */
+let voice = null, voiceLoading = null;
+
+export function loadVoice(){
+  if (voiceLoading) return voiceLoading;
+  voiceLoading = (async () => {
+    try {
+      const ri = await fetch("assets/voice.json");
+      if (!ri.ok || !ctx) return null;
+      const idx = await ri.json();
+      // Opus が小さいので ふだんはこちら。古い iOS Safari は decodeAudioData で
+      // Opus を読めないことがあるので、そのときだけ m4a に落ちる（先取りしていない＝
+      // 落ちてきた端末だけが落とす）
+      let buf = null;
+      for (const file of ["assets/voice.opus", "assets/voice.m4a"]){
+        try {
+          const r = await fetch(file);
+          if (!r.ok) continue;
+          buf = await ctx.decodeAudioData(await r.arrayBuffer());
+          if (buf) break;
+        } catch {}
+      }
+      if (!buf) return null;
+      voice = { clips: idx.clips, credit: idx.credit, buf };
+      return voice;
+    } catch { return null; }
+  })();
+  return voiceLoading;
+}
+
+let playing = [];
+/** id または id の配列。続けて鳴らす。焼かれていなければ false */
+export function speak(ids){
+  if (!voice || !ctx) return false;
+  const list = (Array.isArray(ids) ? ids : [ids]).filter(id => voice.clips[id]);
+  if (!list.length) return false;
+  for (const s of playing) { try { s.stop(); } catch {} }
+  playing = [];
+  let at = ctx.currentTime + 0.02;
+  for (const id of list){
+    const [start, dur] = voice.clips[id];
+    const src = ctx.createBufferSource();
+    src.buffer = voice.buf;
+    src.connect(ctx.destination);
+    src.start(at, start, dur);
+    playing.push(src);
+    at += dur + 0.08;
+  }
+  return true;
+}
+
+export const voiceReady  = () => !!voice;
+export const voiceCredit = () => voice && voice.credit;

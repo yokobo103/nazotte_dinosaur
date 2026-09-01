@@ -279,7 +279,7 @@ function openChar(ch){
   renderSess();
   fit();
   tracer.load(data);
-  say(ch);
+  say(ch, "c:" + ch);
 }
 
 function fit(){
@@ -300,7 +300,7 @@ $("#btn-back").addEventListener("click", ()=>{
   else session = null;
   hidePraise(); show(el.home); renderGrid();
 });
-$("#btn-say").addEventListener("click", ()=>{ sfx.unlock(); say(curChar); });
+$("#btn-say").addEventListener("click", ()=>{ sfx.unlock(); say(curChar, "c:" + curChar); });
 $("#btn-demo").addEventListener("click", ()=>{ sfx.unlock(); hidePraise(); tracer.demo(); });
 $("#btn-again").addEventListener("click", ()=>{
   sfx.unlock(); sfx.pop(); hidePraise();
@@ -425,7 +425,8 @@ function finishSession(){
     achievements: [`${done.length}もじ かけた！`, bone ? "あたらしい ホネを はっくつした！" : "ぜんぶの ホネを はっくつした！"],
     sub: "ゆがんでいても だいじょうぶ。これは きみが かいた もじだよ。",
     button: bone ? "ホネを みる →" : "たんけんへ もどる",
-    speak: `${done.length}もじ かけたね`
+    speak: `${done.length}もじ かけたね`,
+    speakId: "s:set"
   });
 
   if (bone){
@@ -439,7 +440,8 @@ function finishSession(){
       sub:   `これは ${bone.dino.name}の ホネ。あと ${B.ALL_PARTS.length - B.gotParts(dig, bone.dino).length}こで ぜんしんこっかく！`,
       button: bone.complete ? "ぜんしんを みる →" : "ずかんを みる →",
       go: "dig",
-      speak: B.foundText(bone.dino, bone.part)
+      speak: B.foundText(bone.dino, bone.part),
+      speakId: `f:${bone.dino.id}:${bone.part}`
     });
     if (isAllDug() && !dig.certDay){
       dig.certDay = todayISO();
@@ -456,7 +458,8 @@ function finishSession(){
         achievements: ["5つの ホネが そろった！", `${bone.dino.name}の ぜんしんが できた！`],
         button: "ずかんで みる →",
         go: "dig",
-        speak: `${bone.dino.name}の ホネが そろった`
+        speak: `${bone.dino.name}の ホネが そろった`,
+        speakId: `r:${bone.dino.id}`
       });
     }
   }
@@ -470,7 +473,8 @@ function finishSession(){
       sub: "きみは さいこうの はっくつたいだ！",
       button: "しょうじょうを みる →",
       go: "cert",
-      speak: "ずかん コンプリート"
+      speak: "ずかん コンプリート",
+      speakId: "s:complete"
     });
   }
   setTimeout(flushRewards, 700);
@@ -734,6 +738,7 @@ tracer.on.reject = (res)=>{
   sfx.retry();
   flash(WHY[res.reason] || "もういちど", 1100, "top");
   buddyFace(BUDDY_WHY[res.reason] || "oops", 1300);
+  sfx.speak(WHY[res.reason] ? "w:" + res.reason : "w:again");
 };
 
 tracer.on.charDone = (avg)=>{
@@ -755,7 +760,9 @@ tracer.on.charDone = (avg)=>{
     flash(`${"★".repeat(st)}${"☆".repeat(3-st)}  ${PRAISE[st]}`, 1400, "top", true);
     buddyFace(st === 3 ? "great" : "good", 1600);
     confetti();
-    say(ch);
+    // ★の意味を耳でも伝える。字の読みは openChar でもう鳴らしているので、
+    // ここで重ねると「あ、ありの あ」が2回続いてくどくなる
+    if (!sfx.speak(`p:${st}`)) say(ch);
   }, 160);
 
   // れんしゅう中はひとりでに進む（子どもに「つぎ」を押させ続けない）
@@ -992,7 +999,7 @@ function openReward(cfg){
   el.reward.classList.add("is-on");
   sfx.charDone();
   confetti();
-  say(cfg.speak || cfg.title);
+  say(cfg.speak || cfg.title, cfg.speakId);
 }
 function flushRewards(){
   if (el.reward.classList.contains("is-on")) return;
@@ -1021,7 +1028,9 @@ function flash(text, ms = 620, spot = "top", big = false){
 function hidePraise(){ el.praise.classList.remove("is-on"); }
 
 /* ================= よみあげ ================= */
-function say(text){
+function say(text, id){
+  // 焼いた声（VOICEVOX:春歌ナナ）があればそれで鳴らす。無ければ端末の合成音声
+  if (id && sfx.speak(id)) return;
   if (!text || !("speechSynthesis" in window)) return;
   try {
     speechSynthesis.cancel();

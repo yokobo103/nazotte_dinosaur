@@ -20,6 +20,8 @@ const TYPES = {
   ".jpg":  "image/jpeg",
   ".svg":  "image/svg+xml",
   ".mp3":  "audio/mpeg",
+  ".opus": "audio/ogg",
+  ".m4a":  "audio/mp4",
   ".woff2":"font/woff2"
 };
 
