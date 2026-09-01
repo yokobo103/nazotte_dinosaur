@@ -91,6 +91,15 @@ for (const d of DEVICES) {
   await page.goto(URL, { waitUntil: "networkidle0" });
   await page.evaluate(() => localStorage.clear());
   await page.reload({ waitUntil: "networkidle0" });
+  // はじまりの絵が引くまで、実際のタップは全部そこで止まる
+  for (let i = 0; i < 26; i++) {
+    const on = await page.evaluate(() => {
+      const s = document.getElementById("splash");
+      return !!s && s.classList.contains("is-on") && !s.classList.contains("is-off");
+    });
+    if (!on) break;
+    await sleep(120);
+  }
   await sleep(350);
 
   const slug = `${d.w}x${d.h}`;   // 名前の先頭語だと iPhone SE と iPhone 14 が衝突する

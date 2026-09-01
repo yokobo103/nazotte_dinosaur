@@ -11,9 +11,11 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const APP  = path.join(HERE, "..", "app");
 const OUT  = path.join(APP, "sw.js");
 
-// 配らないもの：自分自身と、開発中の下書きページ
+// 先取りしないもの：自分自身、確認用ページ、ホーム画面アイコン。
+// アイコンはページからは使わない（OSが別に取りに行く）。ニャビットの顔にしてから
+// 4枚で276KBあり、一式の1割をオフライン用に持つ意味がない
 const SKIP = new Set(["sw.js"]);
-const SKIP_RE = /-complete\.html$/;
+const SKIP_RE = /(-complete\.html|^icons\/)/;
 
 // テキストは改行をそろえてから測る。Windowsで作ると CRLF、CIは LF で
 // チェックアウトされるので、そろえないと同じ中身でも版が食い違う

@@ -10,14 +10,15 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const OUT = path.join(HERE, "..", "app", "icons");
 fs.mkdirSync(OUT, { recursive: true });
 
-// maskable 用に、字は中央60%の安全圏に収める
+// maskable 用に、絵は中央の安全圏に収める。
+// 顔は make_chars.mjs が焼いた ny_idle.webp（丸抜き透過）を data URI で埋める。
+const FACE = fs.readFileSync(path.join(HERE, "..", "app", "assets", "chars", "ny_idle.webp"))
+               .toString("base64");
 const svg = (size, bleed) => `
 <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 512 512">
   <rect width="512" height="512" rx="${bleed ? 0 : 112}" fill="#ff9f43"/>
   <circle cx="256" cy="256" r="176" fill="#fffdf8"/>
-  <text x="256" y="258" font-size="248" text-anchor="middle" dominant-baseline="central"
-        font-family="Hiragino Maru Gothic ProN, Yu Gothic UI, Meiryo, sans-serif"
-        fill="#4a3b2a">あ</text>
+  <image href="data:image/webp;base64,${FACE}" x="96" y="96" width="320" height="320"/>
 </svg>`;
 
 const browser = await puppeteer.launch({ headless: "new", args: ["--no-sandbox"] });

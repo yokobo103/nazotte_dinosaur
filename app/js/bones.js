@@ -162,7 +162,9 @@ export function loadDig(){
     if (cur) slots[cur.id] = d.got.filter(p => ALL_PARTS.includes(p));
   }
   for (const id of done) slots[id] = [...ALL_PARTS];
-  return { slots, done, log };
+  // ずかんを そろえた日。しょうじょうに書く1行なので、消えないようここに持つ
+  const certDay = typeof d.certDay === "string" ? d.certDay : null;
+  return { slots, done, log, certDay };
 }
 
 export function saveDig(dig){

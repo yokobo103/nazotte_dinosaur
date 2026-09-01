@@ -22,6 +22,7 @@ button{font:inherit}
 /* brand */
 .home-topbar{min-height:72px}.brand{flex:1;min-width:0;line-height:1}.brand-owner{display:block;margin:0 0 1px 2px;color:var(--teal-dark);font-size:10px;font-weight:800;letter-spacing:.14em}
 .brand .logo{font-size:clamp(16px,4.8vw,21px);white-space:normal}.brand .logo span{color:var(--orange);margin-right:.15em}
+.brand-logo{display:flex;align-items:center;margin:0}.brand-logo img{display:block;height:clamp(46px,17.5vw,70px);width:auto;max-width:100%;object-fit:contain;filter:drop-shadow(0 2px 0 rgba(94,63,30,.16))}
 
 /* mission */
 .mission-card{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 96px;gap:6px;padding:15px 15px 12px;border:2px solid rgba(91,62,33,.2);border-radius:26px;background:var(--paper);box-shadow:0 5px 0 rgba(111,76,40,.2);overflow:hidden}
@@ -29,6 +30,7 @@ button{font:inherit}
 .mission-copy{position:relative;z-index:1;min-width:0}.eyebrow{display:block;color:var(--teal-dark);font-size:10px;font-weight:900;letter-spacing:.08em}
 .mission-copy h2{margin:5px 0 5px;font-size:clamp(18px,5.1vw,23px);line-height:1.28}.mission-copy h2 strong{color:var(--orange);font-weight:900}.mission-status{margin:0;color:var(--sub);font-size:11px;font-weight:700}
 .dig-mark{position:relative;min-height:80px}.dig-sun{position:absolute;right:4px;top:-4px;color:var(--gold);font-size:28px}.dig-bone{position:absolute;right:13px;top:21px;z-index:2;font-size:47px;filter:drop-shadow(0 3px 0 rgba(74,49,27,.18));transform:rotate(-12deg)}
+.dig-doc{position:absolute;right:0;bottom:4px;z-index:2;width:92px;height:92px;object-fit:contain;filter:drop-shadow(0 3px 0 rgba(74,49,27,.16))}
 .dig-soil{position:absolute;right:-18px;bottom:-11px;width:118px;height:43px;border-radius:50% 50% 18px 18px;background:#9c6940;box-shadow:inset 0 7px 0 #c8945f}
 .start{position:relative;z-index:2;grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:2px;flex-direction:column;border:0;border-radius:18px;padding:11px 12px;margin-top:7px;min-height:57px;background:var(--orange);color:#fff;cursor:pointer;box-shadow:0 4px 0 var(--orange-dark)}
 .start-main{font-size:19px;font-weight:900;letter-spacing:.03em}.start-main b{display:inline-block;margin-left:6px;font-size:23px}.start-sub{font-size:10px;font-weight:700;opacity:.9}
@@ -55,7 +57,7 @@ button{font:inherit}
 .praise{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:0;transform:scale(.6);transition:opacity .18s,transform .28s cubic-bezier(.2,1.6,.4,1);z-index:5}.praise.is-on{opacity:1;transform:scale(1)}.praise.top{inset:auto 0 100%;padding-bottom:8px;align-items:flex-end}.praise span{padding:.34em .85em;border-radius:999px;background:#fff;color:var(--orange-dark);font-size:clamp(24px,8vw,43px);line-height:1.3;box-shadow:0 6px 20px rgba(100,65,30,.22);white-space:nowrap}.praise.top span{font-size:clamp(16px,5vw,24px)}.praise.top.big span{font-size:clamp(18px,5.8vw,29px)}
 .controls{display:flex;gap:7px;padding:10px 0 3px}.btn{flex:1;border:0;border-radius:17px;min-height:54px;padding:13px 5px;font-size:14px;font-weight:900;cursor:pointer;box-shadow:0 3px 0 rgba(0,0,0,.14)}.btn.ghost{background:var(--paper);color:var(--sub);box-shadow:0 3px 0 var(--line)}.btn.primary{background:var(--orange);color:#fff;box-shadow:0 3px 0 var(--orange-dark)}.btn[disabled]{opacity:.45;pointer-events:none}.btn.is-hidden{display:none}
 @keyframes nudge{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}.btn.primary.is-ready{animation:nudge .7s ease-in-out 3}
-.bone-pop{position:absolute;left:12px;right:12px;bottom:calc(76px + var(--pad));z-index:8;display:flex;align-items:center;justify-content:center;gap:8px;pointer-events:none;opacity:0;transform:translateY(10px);transition:opacity .22s,transform .22s;color:var(--ink);font-size:13px}.bone-pop.is-on{opacity:1;transform:translateY(0)}.bone-pop span{padding:.45em .8em;border-radius:999px;background:#fff;box-shadow:0 3px 0 var(--line);font-weight:800}.bone-art{display:inline-flex;align-items:center;justify-content:center}.bone-art img,.bone-art canvas{display:block;width:100%;height:100%;object-fit:contain}
+.bone-pop{position:absolute;left:12px;right:12px;bottom:calc(82px + var(--pad) + var(--buddy-h, 0px));z-index:8;display:flex;align-items:center;justify-content:center;gap:8px;pointer-events:none;opacity:0;transform:translateY(10px);transition:opacity .22s,transform .22s;color:var(--ink);font-size:13px}.bone-pop.is-on{opacity:1;transform:translateY(0)}.bone-pop span{padding:.45em .8em;border-radius:999px;background:#fff;box-shadow:0 3px 0 var(--line);font-weight:800}.bone-art{display:inline-flex;align-items:center;justify-content:center}.bone-art img,.bone-art canvas{display:block;width:100%;height:100%;object-fit:contain}
 
 /* excavation book */
 .nav-btn-inline{flex:0 0 auto}.book-heading{flex:1;min-width:0}.book-heading>span{display:block;color:var(--teal-dark);font-size:9px;font-weight:900;letter-spacing:.1em}.book-heading .logo{font-size:18px}.bone-total{padding:7px 10px;border-radius:999px;background:var(--soil);color:#fff;font-size:12px;font-weight:900;white-space:nowrap}
@@ -139,3 +141,47 @@ button{font:inherit}
   background:transparent;color:var(--sub);text-decoration:underline;
 }
 .restart.is-hidden{display:none}
+
+/* ===== キャラ ===== */
+/* はじまりの絵。1.6秒で ひとりでに あく（押しても あく） */
+.splash{position:fixed;inset:0;z-index:90;display:none;align-items:center;justify-content:center;background:#241809;transition:opacity .4s}
+.splash.is-on{display:flex}.splash.is-off{opacity:0;pointer-events:none}
+.splash img{display:block;width:100%;height:100%;object-fit:contain}
+
+/* なぞる画面の相棒（ニャビット）。
+   板の下のあいた土に立つ。大きさは fit() が土の広さから決める＝
+   せまい画面では出さない（板を小さくしてまで置くものではない） */
+.buddy-slot{position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:var(--buddy,0px);height:var(--buddy,0px);pointer-events:none}
+.buddy-soil{position:absolute;left:50%;bottom:-3px;transform:translateX(-50%);width:124%;height:23%;border-radius:50%;background:#bc9463;opacity:.34}
+.buddy{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:0;transition:opacity .2s;filter:drop-shadow(0 4px 0 rgba(74,49,27,.13))}
+.buddy.is-on{opacity:1}
+@keyframes buddy-hop{0%,100%{transform:translateY(0)}38%{transform:translateY(-13px)}72%{transform:translateY(0)}}
+.buddy.hop{animation:buddy-hop .52s ease-out}
+
+/* ごほうびの顔（Dr.よこぼ／ニャビット） */
+.reward-face{display:none;width:88px;height:88px;margin:-2px auto 2px;object-fit:contain;filter:drop-shadow(0 3px 0 rgba(74,49,27,.14))}
+.reward-face.is-on{display:block}
+
+/* ===== しょうじょう ===== */
+.cert-scroll{min-height:0;flex:1;overflow-y:auto;display:flex;flex-direction:column;justify-content:center;gap:10px;padding:4px 2px 8px}
+/* よこ向きでは 高さのほうが先に足りなくなる（3:2の絵） */
+.cert-frame{position:relative;container-type:inline-size;width:100%;max-width:min(100%, calc((100vh - 210px) * 1.5));margin:0 auto;border-radius:14px;overflow:hidden;box-shadow:0 5px 0 rgba(111,76,40,.22)}
+.cert-frame img{display:block;width:100%;height:auto}
+/* 日付は 元画(1536x1024)の空欄の位置に合わせて置く。
+   数字の大きさは枠の幅につく（cqw）＝どの画面幅でも同じ収まりになる */
+.cert-fill{position:absolute;top:67.2%;transform:translate(-50%,-50%);color:#4a3520;font-size:4.4cqw;font-weight:900;line-height:1;white-space:nowrap;text-shadow:0 1px 0 rgba(255,255,255,.35)}
+.cert-year{left:39.2%}.cert-month{left:50.6%}.cert-day{left:60.2%}
+.cert-turn{margin:0;color:var(--sub);font-size:10px;font-weight:800;text-align:center;opacity:.8}
+.cert-frame{cursor:pointer}
+/* たてに持ったままでも大きく見せたいので、絵のほうを90度回す。
+   たて390pxの画面で 366px幅 → 561pxの長さになる（1.5倍） */
+.cert-zoom{position:fixed;inset:0;z-index:80;display:none;align-items:center;justify-content:center;background:rgba(38,26,14,.94)}
+.cert-zoom.is-on{display:flex}
+.cert-zoom-inner{transform:rotate(90deg)}
+.cert-zoom .cert-frame{width:min(92vh,144vw);max-width:none;box-shadow:0 8px 26px rgba(0,0,0,.5)}
+.cert-zoom-hint{position:fixed;left:0;right:0;bottom:calc(10px + var(--pad));margin:0;color:#e8d6b6;font-size:11px;font-weight:800;text-align:center;opacity:.75}
+@media (orientation:landscape){.cert-zoom-inner{transform:none}.cert-zoom .cert-frame{width:min(96vw,144vh)}}
+.cert-line{margin:0;padding:10px 12px;border-radius:15px;background:var(--paper);color:var(--soil);font-size:13px;font-weight:800;line-height:1.55;text-align:center;box-shadow:0 3px 0 rgba(111,76,40,.16)}
+/* ずかんの先頭に出す「しょうじょうを みる」 */
+.page.cert-card{background:#fff3cf;border-color:#e6c469;box-shadow:0 3px 0 #dcb75f;text-align:center}
+.cert-card .page-title{font-size:16px}.cert-card p{margin:4px 2px 9px;color:var(--soil);font-size:11px;font-weight:800}

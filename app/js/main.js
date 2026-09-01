@@ -38,6 +38,9 @@ const el = {
   homeBones:$("#home-bones"),
   rewardHand:$("#reward-handwriting"),
   sheet:     $("#part-sheet"),
+  certScr:   $("#screen-cert"),
+  buddy:     $("#buddy"),
+  rewardFace:$("#reward-face"),
   rewardAchievements:$("#reward-achievements")
 };
 
@@ -100,7 +103,7 @@ const starStr = (ch)=> got(ch) ? "★".repeat(starsOf(bestOf(ch) || 1)) : "";
 
 /* ================= 画面きりかえ ================= */
 function show(screen){
-  for (const s of [el.home, el.trace, el.digScr, el.dinoScr]) s.classList.toggle("is-on", s === screen);
+  for (const s of [el.home, el.trace, el.digScr, el.dinoScr, el.certScr]) s.classList.toggle("is-on", s === screen);
 }
 document.addEventListener("click", (e)=>{
   const b = e.target.closest("[data-go]");
@@ -263,6 +266,7 @@ function renderSess(){
 
 /* ================= なぞり画面 ================= */
 function openChar(ch){
+  buddyFace("idle");
   const data = KANA[ch];
   if (!data) return;
   curChar = ch;
@@ -283,6 +287,7 @@ function fit(){
   const w = el.stage.clientWidth  - pad;
   const h = el.stage.clientHeight - pad;
   tracer.resize(Math.floor(Math.max(200, Math.min(w, h, 460))));
+  fitBuddy();
 }
 window.addEventListener("resize", ()=>{ if (el.trace.classList.contains("is-on")) fit(); });
 window.addEventListener("orientationchange", ()=> setTimeout(fit, 250));
@@ -308,6 +313,47 @@ $("#btn-next").addEventListener("click", ()=>{
   const list = Object.values(SETS[kanaOf(curChar)]).flat().filter(Boolean);
   openChar(list[(list.indexOf(curChar) + 1) % list.length]);
 });
+
+
+/* ================= なぞる画面の相棒 =================
+   まだ字が読めない子に、★や「かたちが ちがうみたい」を顔で伝える。
+   文字は消さない（読める大人・読めるようになった子には文字のほうが速い）。 */
+const BUDDY = {
+  idle:  "ny_idle",   // ふつう
+  great: "ny_great",  // 星目 ＝ かんぺき
+  good:  "ny_good",   // わらい ＝ じょうず・いいね
+  hmm:   "ny_hmm",    // ？ ＝ ちがう線を書いた
+  oops:  "ny_oops",   // あせ ＝ とちゅう・はじめの●
+  love:  "ny_love"    // ハート目 ＝ ホネが出た
+};
+const BUDDY_WHY = { reverse:"hmm", off:"hmm", shape:"hmm", start:"oops", short:"oops" };
+let buddyTimer = null;
+function buddyFace(mood, hold = 1500){
+  const img = el.buddy;
+  if (!img) return;
+  img.src = "assets/chars/" + (BUDDY[mood] || BUDDY.idle) + ".webp";
+  img.classList.remove("hop");
+  void img.offsetWidth;                       // アニメを最初から出しなおす
+  clearTimeout(buddyTimer);
+  if (mood === "idle") return;
+  img.classList.add("hop");
+  buddyTimer = setTimeout(()=> buddyFace("idle"), hold);
+}
+/** 板の下にあいた土の広さから大きさを決める。せまければ出さない。
+    ＝相棒のために字を書くマスを小さくすることはしない */
+function fitBuddy(){
+  const img = el.buddy;
+  if (!img) return;
+  const wrap = el.canvas.closest(".canvas-wrap");
+  const gap = el.stage.getBoundingClientRect().bottom - wrap.getBoundingClientRect().bottom;
+  const size = Math.min(132, Math.floor(gap - 12));
+  const shown = size >= 72;
+  const slot = img.closest(".buddy-slot") || img;
+  slot.style.setProperty("--buddy", Math.max(0, size) + "px");
+  img.classList.toggle("is-on", shown);
+  // ホネのふきだしが相棒の顔にかぶらないよう、居場所を教えておく
+  el.trace.style.setProperty("--buddy-h", (shown ? size : 0) + "px");
+}
 
 /** れんしゅう中の進み方。同じ字を REPS 回 → つぎの字 → SET 文字で1セット */
 function advance(){
@@ -373,6 +419,7 @@ function finishSession(){
   queueReward({
     kind: "handwriting",
     kicker: "れんしゅう おつかれさま！",
+    face: "yk_cheer",
     title: "じぶんで かいた 5もじ",
     handwriting: samples,
     achievements: [`${done.length}もじ かけた！`, bone ? "あたらしい ホネを はっくつした！" : "ぜんぶの ホネを はっくつした！"],
@@ -385,6 +432,7 @@ function finishSession(){
     queueReward({
       kind: "bone",
       kicker: "はっくつ せいこう！",
+      face: "ny_love",
       title: `${bone.dino.name}の ホネ！`,
       art:   boneElement(B.artKey(bone.dino, bone.part), 150),
       achievements: [`${bone.dino.name}の ${B.partName(bone.dino, bone.part)}を みつけた！`, "はっくつずかんに きろくした！"],
@@ -393,10 +441,15 @@ function finishSession(){
       go: "dig",
       speak: B.foundText(bone.dino, bone.part)
     });
+    if (isAllDug() && !dig.certDay){
+      dig.certDay = todayISO();
+      B.saveDig(dig);
+    }
     if (bone.complete){
       queueReward({
         kind: "reveal",
         kicker: "ぜんしんこっかく かんせい！",
+        face: "yk_cheer",
         title: bone.dino.name + "！",
         art:   boneElement("full_" + bone.dino.id, 268, bone.dino.name),
         sub:   bone.dino.fact,
@@ -406,6 +459,19 @@ function finishSession(){
         speak: `${bone.dino.name}の ホネが そろった`
       });
     }
+  }
+  if (isAllDug()){
+    queueReward({
+      kind: "cert",
+      kicker: "はっくつたい にんてい",
+      title: "ずかん コンプリート！",
+      face: "yk_cheer",
+      achievements: [`ホネを ${B.TOTAL_BONES()}こ ぜんぶ みつけた！`, "しょうじょうを もらった！"],
+      sub: "きみは さいこうの はっくつたいだ！",
+      button: "しょうじょうを みる →",
+      go: "cert",
+      speak: "ずかん コンプリート"
+    });
   }
   setTimeout(flushRewards, 700);
 }
@@ -552,6 +618,69 @@ function dinoCard(dino){
   return card;
 }
 
+
+/* ================= しょうじょう =================
+   30こ ぜんぶ そろったときの1枚。日付だけ、絵の空欄に書きこむ。 */
+const isAllDug = ()=> B.boneCount(dig) >= B.TOTAL_BONES();
+
+function todayISO(){
+  const n = new Date();
+  return `${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,"0")}-${String(n.getDate()).padStart(2,"0")}`;
+}
+
+function renderCert(){
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dig.certDay || "");
+  $("#cert-year").textContent  = m ? m[1] : "";
+  $("#cert-month").textContent = m ? String(Number(m[2])) : "";
+  $("#cert-day").textContent   = m ? String(Number(m[3])) : "";
+  const bones = B.TOTAL_BONES();
+  $("#cert-line").textContent = m
+    ? `${m[1]}ねん ${Number(m[2])}がつ ${Number(m[3])}にち、ホネ ${bones}こ ぜんぶ はっくつ かんりょう！`
+    : `ホネ ${bones}こ ぜんぶ はっくつ かんりょう！`;
+}
+
+function openCert(){
+  renderCert();
+  show(el.certScr);
+}
+$("#btn-cert-back").addEventListener("click", ()=>{ sfx.pop(); show(el.digScr); renderDig(); });
+
+// しょうじょうを おおきく。たてのままでも見せたいので絵ごと90度回す。
+// 中身は本物を写して出す（日付を2か所に書かない）
+const certZoom = $("#cert-zoom");
+function openCertZoom(){
+  const frame = document.querySelector("#screen-cert .cert-frame");
+  if (!frame) return;
+  const copy = frame.cloneNode(true);
+  // 写しなので id は外す。同じ id が2つあると renderCert がどちらを書くか分からなくなる
+  copy.removeAttribute("id");
+  for (const e of copy.querySelectorAll("[id]")) e.removeAttribute("id");
+  $("#cert-zoom-inner").replaceChildren(copy);
+  certZoom.classList.add("is-on");
+  sfx.pop();
+}
+document.querySelector("#screen-cert .cert-frame").addEventListener("click", openCertZoom);
+certZoom.addEventListener("click", ()=>{ certZoom.classList.remove("is-on"); sfx.pop(); });
+
+function certCard(){
+  const card = document.createElement("section");
+  card.className = "page cert-card";
+  const head = document.createElement("div");
+  head.className = "page-head";
+  head.innerHTML = '<h3 class="page-title">🏆 ずかん コンプリート！</h3>';
+  card.appendChild(head);
+  const p = document.createElement("p");
+  p.textContent = "きみは さいこうの はっくつたいだ！";
+  card.appendChild(p);
+  const btn = document.createElement("button");
+  btn.className = "dino-open btn primary";
+  btn.id = "btn-cert-open";
+  btn.textContent = "しょうじょうを みる →";
+  btn.addEventListener("click", ()=>{ sfx.pop(); openCert(); });
+  card.appendChild(btn);
+  return card;
+}
+
 function renderDig(){
   el.digWrap.innerHTML = "";
   // そろった → 掘りかけ → 手つかず。手つかずが上に来ると、進んでいるものが埋もれる
@@ -559,8 +688,12 @@ function renderDig(){
   const going = B.DINOS.filter(d => !B.isComplete(dig, d) && B.gotParts(dig, d).length > 0);
   const yet   = B.DINOS.filter(d => !B.isComplete(dig, d) && B.gotParts(dig, d).length === 0);
   const rest  = [...going, ...yet];
+  if (isAllDug()) el.digWrap.appendChild(certCard());
   for (const d of [...done, ...rest]) el.digWrap.appendChild(dinoCard(d));
   el.digTotal.textContent = `${B.boneCount(dig)} / ${B.TOTAL_BONES()}`;
+  $(".dig-intro strong").innerHTML = isAllDug()
+    ? "ぜんぶの ホネが そろった！<br>きみは さいこうの はっくつたい！"
+    : "ホネを 5こ あつめると<br>ぜんしんこっかくが かんせい！";
   el.digNote.textContent = allPlaceholder() ? "※ ホネの えは まだ 仮のものです" : "";
 }
 
@@ -573,6 +706,7 @@ function popBone(dino, part){
   t.textContent = B.foundText(dino, part);
   el.bonePop.appendChild(t);
   el.bonePop.classList.add("is-on");
+  buddyFace("love", 2300);
   clearTimeout(bonePopTimer);
   bonePopTimer = setTimeout(()=> el.bonePop.classList.remove("is-on"), 2300);
 }
@@ -593,11 +727,13 @@ tracer.on.strokeDone = (i, res)=>{
   sfx.strokeDone(i);
   const st = starsOf(res.value);
   flash(`${"★".repeat(st)}${"☆".repeat(3-st)} ${PRAISE[st]}`, 700, "top");
+  buddyFace(st === 3 ? "great" : "good", 900);
 };
 
 tracer.on.reject = (res)=>{
   sfx.retry();
   flash(WHY[res.reason] || "もういちど", 1100, "top");
+  buddyFace(BUDDY_WHY[res.reason] || "oops", 1300);
 };
 
 tracer.on.charDone = (avg)=>{
@@ -617,6 +753,7 @@ tracer.on.charDone = (avg)=>{
   const st = starsOf(avg);
   setTimeout(()=>{
     flash(`${"★".repeat(st)}${"☆".repeat(3-st)}  ${PRAISE[st]}`, 1400, "top", true);
+    buddyFace(st === 3 ? "great" : "good", 1600);
     confetti();
     say(ch);
   }, 160);
@@ -833,6 +970,8 @@ function renderHandwriting(samples){
 function openReward(cfg){
   currentReward = cfg;
   rewardLog.push({ title: cfg.title || "", emojis: cfg.emojis || "" });
+  el.rewardFace.classList.toggle("is-on", !!cfg.face);
+  if (cfg.face) el.rewardFace.src = "assets/chars/" + cfg.face + ".webp";
   $("#reward-kicker").textContent = cfg.kicker || "";
   $("#reward-title").textContent = cfg.title || "";
   renderHandwriting(cfg.handwriting);
@@ -863,6 +1002,7 @@ $("#reward-ok").addEventListener("click", ()=>{
   sfx.pop();
   el.reward.classList.remove("is-on");
   if (rewardQueue.length) setTimeout(flushRewards, 350);
+  else if (currentReward && currentReward.go === "cert") openCert();
   else if (currentReward && currentReward.go === "dig") { show(el.digScr); renderDig(); }
   else { show(el.home); renderGrid(); }
 });
@@ -928,6 +1068,21 @@ if ("serviceWorker" in navigator && location.protocol.startsWith("http")){
   addEventListener("load", ()=> navigator.serviceWorker.register("sw.js").catch(()=>{}));
 }
 
+// はじまりの絵。1.6秒でひとりでに引く。押せばすぐ引く。
+// 押して閉じるものにすると、開くたびに1タップ増える＝毎日やる練習には重い。
+const splash = $("#splash");
+let splashTimer = null;
+function closeSplash(){
+  if (!splash || !splash.classList.contains("is-on")) return;
+  clearTimeout(splashTimer);
+  splash.classList.add("is-off");
+  setTimeout(()=> splash.classList.remove("is-on"), 450);
+}
+if (splash){
+  splashTimer = setTimeout(closeSplash, 1600);
+  splash.addEventListener("pointerdown", closeSplash);
+}
+
 document.addEventListener("pointerdown", ()=>sfx.unlock(), { once:true });
 document.addEventListener("gesturestart", e=>e.preventDefault());
 renderGrid();
@@ -953,6 +1108,10 @@ window.__nazorin = {
   tracer, stamps, dig, handwriting, bones: B, starsOf,
   openChar, renderGrid, renderDig, openPartSheet, closePartSheet, renderDinoDetail, openDinoDetail, closeDinoDetail,
   popBone, startSession, startPractice, show, el,
+  openCert, renderCert, openCertZoom, closeSplash, buddyFace, fitBuddy,
+  buddy: ()=>({ src: (el.buddy.getAttribute("src")||"").split("/").pop(),
+                shown: el.buddy.classList.contains("is-on"),
+                size: (el.buddy.closest(".buddy-slot") || el.buddy).style.getPropertyValue("--buddy") }),
   REPS, SET,
   get char(){ return curChar; },
   get session(){ return session; },

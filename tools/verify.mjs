@@ -74,6 +74,23 @@ const state = (page) => page.evaluate(() => {
   };
 });
 
+
+/** はじまりの絵（キービジュアル）が引くのを待つ。
+ *  押して消すのではなく「ひとりでに引く」ことを確かめたいので、待つ。
+ *  引かないまま被さっていると、以降のクリックが全部死ぬ（実際に一度そうなった）。 */
+async function passSplash(page, limit = 3000) {
+  const t0 = Date.now();
+  for (;;) {
+    const on = await page.evaluate(() => {
+      const s = document.getElementById("splash");
+      return !!s && s.classList.contains("is-on") && !s.classList.contains("is-off");
+    });
+    if (!on) return Date.now() - t0;
+    if (Date.now() - t0 > limit) return -1;
+    await sleep(120);
+  }
+}
+
 /** ごほうび画面を全部閉じきる。
  *  行かんせいと きょうりゅうかんせいが続けて出るので1回では足りない。
  *  「まだ出ていないだけ」の場合もあるので、待ち行列が空になるまで面倒を見る。 */
@@ -148,6 +165,9 @@ page.on("response", r => { if (r.status() >= 400) errors.push(r.status() + " " +
 await page.goto(URL, { waitUntil: "networkidle0" });
 await page.evaluate(() => localStorage.clear());
 await page.reload({ waitUntil: "networkidle0" });
+const splashMs = await passSplash(page);
+check("はじまりの絵が ひとりでに引く（押さなくても消える）",
+  splashMs >= 0 && splashMs < 2600, splashMs < 0 ? "消えなかった" : `${splashMs}ms`);
 await sleep(400);
 
 /* ================= 1. 50音表 ================= */
@@ -494,7 +514,7 @@ check("説明・基本情報・出典が恐竜データから表示される",
   detailLife.facts === 4 && detailLife.source.includes("nhm.ac.uk"), JSON.stringify(detailLife));
 await shot(page, "16_dino_detail.png");
 
-await page.reload({ waitUntil:"networkidle0" }); await sleep(300);
+await page.reload({ waitUntil:"networkidle0" }); await passSplash(page); await sleep(300);
 const detailReload = await page.evaluate(() => ({
   on: document.querySelector("#screen-dino").classList.contains("is-on"),
   name: document.querySelector("#dino-detail-name").textContent,
@@ -674,6 +694,7 @@ check("生きていた年代に漢字やカタカナが残っていない",
   periodLabels.every(label => !/[一-龠々〆ヵヶァ-ヶ]/.test(label)), periodLabels.join(" / "));
 
 await page.goto(URL.replace(/\/?$/, "/") + "triceratops-complete.html", { waitUntil: "networkidle0" });
+await passSplash(page);
 const triDemo = await page.evaluate(() => ({
   path: location.pathname,
   demo: new URLSearchParams(location.search).get("demo"),
@@ -697,6 +718,7 @@ for (const [id, name] of [
   ["tyrannosaurus", "ティラノサウルス"]
 ]) {
   await page.goto(URL.replace(/\/?$/, "/") + `${id}-complete.html`, { waitUntil:"networkidle0" });
+  await passSplash(page);
   addedDinoDemos.push(await page.evaluate(([expectedId, expectedName]) => ({
     id: expectedId,
     name: document.querySelector("#dig .page-title")?.textContent,
@@ -826,12 +848,146 @@ check("まっすぐ引くだけで通るのは もともと直線の画だけ",
   shapeCheck.straightPass <= 345,
   `${shapeCheck.straightPass}本（曲がった画は止まる）`);
 
+/* ================= キャラ ================= */
+// まだ字が読めない子に、★とやりなおしの理由を顔で伝えている。
+// 出ているか・変わるか・書くマスを狭めていないか の3つを見る。
+{
+  await settleRewards(page);
+  await page.evaluate(() => { const N = window.__nazorin; N.show(N.el.home); N.startSession(); });
+  await sleep(400);
+
+  const box = await page.evaluate(() => {
+    const r = (sel) => { const e = document.querySelector(sel); const b = e.getBoundingClientRect();
+                         return { t: Math.round(b.top), b: Math.round(b.bottom), h: Math.round(b.height) }; };
+    return { buddy: r("#buddy"), wrap: r(".canvas-wrap"), stage: r(".stage"),
+             shown: document.querySelector("#buddy").classList.contains("is-on") };
+  });
+  check("なぞる画面に 相棒が出る",
+    box.shown && box.buddy.h >= 72, `${box.buddy.h}px`);
+  check("相棒は 字を書くマスの下（板を小さくしていない）",
+    box.buddy.t >= box.wrap.b && box.buddy.b <= box.stage.b + 1,
+    `板の下端${box.wrap.b} / 相棒${box.buddy.t}-${box.buddy.b} / 土の下端${box.stage.b}`);
+
+  const faceOf = () => page.evaluate(() => window.__nazorin.buddy().src);
+  await traceStroke(page, 0, { reverse: true });
+  await sleep(200);
+  const badFace = await faceOf();
+  check("ちがう線を書くと 相棒が こまった顔になる",
+    badFace === "ny_hmm.webp" || badFace === "ny_oops.webp", badFace);
+
+  await page.evaluate(() => window.__nazorin.tracer.reset());
+  await traceStroke(page, 0);
+  await sleep(200);
+  const goodFace = await faceOf();
+  check("ていねいに書くと 相棒が よろこぶ顔になる",
+    goodFace === "ny_great.webp" || goodFace === "ny_good.webp", goodFace);
+
+  // ホネのふきだしが顔に重なっていた（相棒を入れて初めて起きた）
+  await page.evaluate(() => {
+    const N = window.__nazorin, B = N.bones;
+    N.popBone(B.DINOS[0], "body");
+  });
+  await sleep(300);
+  const overlap = await page.evaluate(() => {
+    const a = document.querySelector("#bone-pop").getBoundingClientRect();
+    const b = document.querySelector("#buddy").getBoundingClientRect();
+    return { pop: Math.round(a.bottom), face: Math.round(b.top),
+             hit: a.bottom > b.top && a.top < b.bottom };
+  });
+  check("ホネのふきだしが 相棒の顔に かぶらない",
+    !overlap.hit, `ふきだし下端${overlap.pop} / 顔の上端${overlap.face}`);
+  await shot(page, "20_buddy.png");
+
+  await page.evaluate(() => { const N = window.__nazorin; N.show(N.el.home); });
+}
+
+/* ================= しょうじょう ================= */
+{
+  const before = await page.evaluate(() => {
+    const N = window.__nazorin;
+    N.show(N.el.digScr); N.renderDig();
+    return !!document.querySelector("#btn-cert-open");
+  });
+  check("そろう前は しょうじょうを出さない", before === false);
+
+  const after = await page.evaluate(() => {
+    const N = window.__nazorin, B = N.bones;
+    for (const d of B.DINOS) N.dig.slots[d.id] = B.ALL_PARTS.slice();
+    N.dig.done = B.DINOS.map(d => d.id);
+    N.dig.certDay = "2026-09-01";
+    B.saveDig(N.dig);
+    N.renderDig();
+    return { open: !!document.querySelector("#btn-cert-open"),
+             intro: document.querySelector(".dig-intro strong").textContent };
+  });
+  check("30こ そろうと ずかんの先頭に しょうじょうが出る",
+    after.open && after.intro.includes("そろった"), after.intro);
+
+  const cert = await page.evaluate(() => {
+    window.__nazorin.openCert();
+    const img = document.querySelector("#screen-cert img");
+    return { on: document.querySelector("#screen-cert").classList.contains("is-on"),
+             src: img.getAttribute("src"),
+             y: document.querySelector("#cert-year").textContent,
+             m: document.querySelector("#cert-month").textContent,
+             d: document.querySelector("#cert-day").textContent,
+             line: document.querySelector("#cert-line").textContent };
+  });
+  check("しょうじょうに そろえた日が 入る",
+    cert.on && cert.src.endsWith("certificate.webp") &&
+    cert.y === "2026" && cert.m === "9" && cert.d === "1" && cert.line.includes("30こ"),
+    JSON.stringify(cert));
+  await shot(page, "21_cert.png");
+
+  // 空欄の位置は絵に合わせてある。ずれると日付が枠の外に出る
+  const fit = await page.evaluate(() => {
+    const f = document.querySelector(".cert-frame").getBoundingClientRect();
+    return ["#cert-year", "#cert-month", "#cert-day"].map(sel => {
+      const b = document.querySelector(sel).getBoundingClientRect();
+      return { in: b.left > f.left && b.right < f.right && b.top > f.top && b.bottom < f.bottom,
+               x: Math.round(((b.left + b.right) / 2 - f.left) / f.width * 1000) / 10 };
+    });
+  });
+  check("日付が しょうじょうの枠の中に おさまる",
+    fit.every(x => x.in), fit.map(x => x.x + "%").join(" / "));
+
+  // たてに持ったままでも大きく見せるため、絵ごと90度回して出す
+  const zoom = await page.evaluate(() => {
+    const normal = document.querySelector("#screen-cert .cert-frame").getBoundingClientRect();
+    window.__nazorin.openCertZoom();
+    const big = document.querySelector("#cert-zoom .cert-frame").getBoundingClientRect();
+    return { normal: Math.round(normal.width),
+             long: Math.round(Math.max(big.width, big.height)),
+             inView: big.left > -1 && big.top > -1 &&
+                     big.right <= innerWidth + 1 && big.bottom <= innerHeight + 1,
+             day: document.querySelector("#cert-zoom .cert-day")?.textContent,
+             dupIds: document.querySelectorAll("#cert-zoom [id]").length };
+  });
+  check("しょうじょうを押すと 大きくなり、画面からはみ出さない",
+    zoom.long > zoom.normal * 1.3 && zoom.inView && zoom.day === "1" && zoom.dupIds === 1,
+    `ふつう${zoom.normal}px → 拡大${zoom.long}px`);
+  await page.evaluate(() => document.querySelector("#cert-zoom").click());
+  await sleep(200);
+  check("しょうじょうの拡大は 押すと とじる",
+    await page.$eval("#cert-zoom", e => !e.classList.contains("is-on")));
+
+  await page.evaluate(() => {
+    const N = window.__nazorin, B = N.bones;
+    for (const d of B.DINOS) N.dig.slots[d.id] = [];
+    N.dig.done = []; N.dig.certDay = null;
+    B.saveDig(N.dig);
+    N.show(N.el.home);
+  });
+}
+
 /* ================= 8. オフライン ================= */
 {
   const s = swScan();
   check("sw.js が最新（node tools/build_sw.mjs を回し忘れていない）",
     s.version === writtenVersion(), `いま ${s.version} / 書いてある ${writtenVersion()}`);
-  check("配信サイズが 2MB を超えていない", s.total < 2 * 1024 * 1024,
+  // キャラの絵（キービジュアル・ロゴ・表情・しょうじょう）で 440KB ふえた。
+  // 初回だけ落ちて、あとはオフラインで動く一式ぶん。
+  check("配信サイズが 2.4MB を超えていない", s.total < 2.4 * 1024 * 1024,
     `${(s.total/1024).toFixed(0)}KB / ${s.files.length}ファイル`);
 }
 
@@ -857,6 +1013,7 @@ check("アプリ一式がキャッシュされる", cached.n >= 35, `${cached.n}
 await page.setOfflineMode(true);
 await page.reload({ waitUntil: "domcontentloaded" });
 await sleep(1200);
+await passSplash(page);
 const offlineView = await page.evaluate(() => ({
   title: document.title,
   cells: document.querySelectorAll(".cell:not(.blank)").length,

@@ -16,6 +16,7 @@ const b = await puppeteer.launch({ headless: "new", args: ["--no-sandbox"] });
 const p = await b.newPage();
 await p.setViewport({ width: 390, height: 844, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
 await p.goto(URL, { waitUntil: "networkidle0" });
+await sleep(2200);   // はじまりの絵が引くまで待つ
 
 const state = () => p.evaluate(() => {
   const N = window.__nazorin, B = N.bones;

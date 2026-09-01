@@ -16,12 +16,16 @@
 </head>
 <body>
 
+<!-- ===== はじまりの絵（1.6秒で ひとりでに あく） ===== -->
+<div id="splash" class="splash is-on">
+  <img src="assets/chars/keyvisual.webp" alt="よこぼの なぞって！きょうりゅう はっくつたい">
+</div>
+
 <!-- ===== はっくつベース（ホーム） ===== -->
 <section id="screen-home" class="screen is-on">
   <header class="topbar home-topbar">
     <div class="brand">
-      <span class="brand-owner">よこぼの</span>
-      <h1 class="logo"><span>なぞって！</span>きょうりゅう はっくつたい</h1>
+      <h1 class="logo brand-logo"><img src="assets/chars/logo.webp" alt="よこぼの なぞって！きょうりゅう はっくつたい"></h1>
     </div>
     <button id="btn-reset" class="mini icon" title="さいしょから">⚙</button>
   </header>
@@ -34,7 +38,7 @@
     </div>
     <div class="dig-mark" aria-hidden="true">
       <span class="dig-sun">✦</span>
-      <span class="dig-bone">🦴</span>
+      <img class="dig-doc" id="home-doc" src="assets/chars/yk_wave.webp" alt="">
       <span class="dig-soil"></span>
     </div>
     <button id="btn-start" class="start">
@@ -92,6 +96,10 @@
       <span class="board-label" aria-hidden="true">もじボード</span>
       <canvas id="canvas"></canvas>
       <div id="praise" class="praise"></div>
+    </div>
+    <div class="buddy-slot" aria-hidden="true">
+      <span class="buddy-soil"></span>
+      <img id="buddy" class="buddy" src="assets/chars/ny_idle.webp" alt="">
     </div>
   </div>
 
@@ -163,6 +171,35 @@
   </nav>
 </section>
 
+<!-- ===== しょうじょう（30こ ぜんぶ そろったら） ===== -->
+<section id="screen-cert" class="screen cert-screen" aria-labelledby="cert-title">
+  <header class="topbar">
+    <button id="btn-cert-back" class="mini back" aria-label="ずかんへ もどる">←</button>
+    <div class="book-heading"><span>はっくつたい にんてい</span><h2 class="logo" id="cert-title">🏆 しょうじょう</h2></div>
+  </header>
+
+  <div class="cert-scroll">
+    <div class="cert-frame">
+      <img src="assets/chars/certificate.webp" alt="ずかん コンプリート！ すべての きょうりゅうの ホネを あつめたよ。きみは さいこうの はっくつたいだ！">
+      <span class="cert-fill cert-year"  id="cert-year"></span>
+      <span class="cert-fill cert-month" id="cert-month"></span>
+      <span class="cert-fill cert-day"   id="cert-day"></span>
+    </div>
+    <p class="cert-turn">おしたら おおきく みえるよ</p>
+    <p class="cert-line" id="cert-line"></p>
+  </div>
+
+  <nav class="nav">
+    <button class="nav-btn" data-go="dig"><span class="nav-icon">🦴</span><span><b>ずかんへ もどる</b><small>あつめた ホネを みる</small></span><span class="nav-arrow">←</span></button>
+  </nav>
+</section>
+
+<!-- ===== しょうじょうの 拡大（押すと出る。たてのままでも大きく見せるため回す） ===== -->
+<div id="cert-zoom" class="cert-zoom" role="dialog" aria-modal="true" aria-label="しょうじょうを おおきく">
+  <div class="cert-zoom-inner" id="cert-zoom-inner"></div>
+  <p class="cert-zoom-hint">おすと とじるよ</p>
+</div>
+
 <!-- ===== ホネ1つの きろく（マスを押すと出る） ===== -->
 <div id="part-sheet" class="sheet" role="dialog" aria-modal="true" aria-labelledby="part-title">
   <div class="sheet-card">
@@ -179,6 +216,7 @@
 <!-- ===== ごほうび ===== -->
 <div id="reward" class="reward">
   <div class="reward-card">
+    <img id="reward-face" class="reward-face" alt="" aria-hidden="true">
     <p class="reward-kicker" id="reward-kicker"></p>
     <p class="reward-title" id="reward-title"></p>
     <div class="reward-handwriting" id="reward-handwriting"></div>
