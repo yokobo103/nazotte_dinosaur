@@ -25,12 +25,12 @@ button{font:inherit}
 .brand-logo{display:flex;align-items:center;margin:0}.brand-logo img{display:block;height:clamp(46px,17.5vw,70px);width:auto;max-width:100%;object-fit:contain;filter:drop-shadow(0 2px 0 rgba(94,63,30,.16))}
 
 /* mission */
-.mission-card{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 96px;gap:6px;padding:15px 15px 12px;border:2px solid rgba(91,62,33,.2);border-radius:26px;background:var(--paper);box-shadow:0 5px 0 rgba(111,76,40,.2);overflow:hidden}
+.mission-card{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 106px;gap:6px;padding:15px 15px 12px;border:2px solid rgba(91,62,33,.2);border-radius:26px;background:var(--paper);box-shadow:0 5px 0 rgba(111,76,40,.2);overflow:hidden}
 .mission-card::before{content:"";position:absolute;inset:auto -20px -28px -20px;height:62px;border-radius:50% 50% 0 0;background:#ad7746;opacity:.16}
 .mission-copy{position:relative;z-index:1;min-width:0}.eyebrow{display:block;color:var(--teal-dark);font-size:10px;font-weight:900;letter-spacing:.08em}
 .mission-copy h2{margin:5px 0 5px;font-size:clamp(18px,5.1vw,23px);line-height:1.28}.mission-copy h2 strong{color:var(--orange);font-weight:900}.mission-status{margin:0;color:var(--sub);font-size:11px;font-weight:700}
 .dig-mark{position:relative;min-height:80px}.dig-sun{position:absolute;right:4px;top:-4px;color:var(--gold);font-size:28px}.dig-bone{position:absolute;right:13px;top:21px;z-index:2;font-size:47px;filter:drop-shadow(0 3px 0 rgba(74,49,27,.18));transform:rotate(-12deg)}
-.dig-doc{position:absolute;right:0;bottom:4px;z-index:2;width:92px;height:92px;object-fit:contain;filter:drop-shadow(0 3px 0 rgba(74,49,27,.16))}
+.dig-doc{position:absolute;right:-8px;bottom:4px;z-index:2;width:122px;height:auto;filter:drop-shadow(0 3px 0 rgba(74,49,27,.16))}
 .dig-soil{position:absolute;right:-18px;bottom:-11px;width:118px;height:43px;border-radius:50% 50% 18px 18px;background:#9c6940;box-shadow:inset 0 7px 0 #c8945f}
 .start{position:relative;z-index:2;grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:2px;flex-direction:column;border:0;border-radius:18px;padding:11px 12px;margin-top:7px;min-height:57px;background:var(--orange);color:#fff;cursor:pointer;box-shadow:0 4px 0 var(--orange-dark)}
 .start-main{font-size:19px;font-weight:900;letter-spacing:.03em}.start-main b{display:inline-block;margin-left:6px;font-size:23px}.start-sub{font-size:10px;font-weight:700;opacity:.9}
@@ -153,13 +153,13 @@ button{font:inherit}
    せまい画面では出さない（板を小さくしてまで置くものではない） */
 .buddy-slot{position:absolute;left:50%;bottom:0;transform:translateX(-50%);width:var(--buddy,0px);height:var(--buddy,0px);pointer-events:none}
 .buddy-soil{position:absolute;left:50%;bottom:-3px;transform:translateX(-50%);width:124%;height:23%;border-radius:50%;background:#bc9463;opacity:.34}
-.buddy{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:0;transition:opacity .2s;filter:drop-shadow(0 4px 0 rgba(74,49,27,.13))}
+.buddy{position:absolute;left:50%;top:0;height:100%;width:auto;max-width:none;transform:translateX(-50%);opacity:0;transition:opacity .2s;filter:drop-shadow(0 4px 0 rgba(74,49,27,.13))}
 .buddy.is-on{opacity:1}
-@keyframes buddy-hop{0%,100%{transform:translateY(0)}38%{transform:translateY(-13px)}72%{transform:translateY(0)}}
+@keyframes buddy-hop{0%,100%{transform:translateX(-50%) translateY(0)}38%{transform:translateX(-50%) translateY(-13px)}72%{transform:translateX(-50%) translateY(0)}}
 .buddy.hop{animation:buddy-hop .52s ease-out}
 
 /* ごほうびの顔（Dr.よこぼ／ニャビット） */
-.reward-face{display:none;width:88px;height:88px;margin:-2px auto 2px;object-fit:contain;filter:drop-shadow(0 3px 0 rgba(74,49,27,.14))}
+.reward-face{display:none;height:92px;width:auto;margin:-2px auto 2px;filter:drop-shadow(0 3px 0 rgba(74,49,27,.14))}
 .reward-face.is-on{display:block}
 
 /* ===== しょうじょう ===== */

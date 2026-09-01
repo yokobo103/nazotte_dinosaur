@@ -18,7 +18,7 @@ const svg = (size, bleed) => `
 <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 512 512">
   <rect width="512" height="512" rx="${bleed ? 0 : 112}" fill="#ff9f43"/>
   <circle cx="256" cy="256" r="176" fill="#fffdf8"/>
-  <image href="data:image/webp;base64,${FACE}" x="96" y="96" width="320" height="320"/>
+  <image href="data:image/webp;base64,${FACE}" x="91" y="110" width="330" height="292"/>
 </svg>`;
 
 const browser = await puppeteer.launch({ headless: "new", args: ["--no-sandbox"] });
