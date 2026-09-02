@@ -43,6 +43,7 @@ const el = {
   recent:    $("#recent-list"),
   trainGo:   $("#btn-train-go"),
   kanaPick:  $("#kana-switch"),
+  setScr:    $("#screen-settings"),
   buddy:     $("#buddy"),
   rewardFace:$("#reward-face"),
   rewardAchievements:$("#reward-achievements")
@@ -110,7 +111,7 @@ const starStr = (ch)=> got(ch) ? "★".repeat(starsOf(bestOf(ch) || 1)) : "";
 
 /* ================= 画面きりかえ ================= */
 function show(screen){
-  for (const s of [el.home, el.trace, el.digScr, el.dinoScr, el.certScr, el.train]) s.classList.toggle("is-on", s === screen);
+  for (const s of [el.home, el.trace, el.digScr, el.dinoScr, el.certScr, el.train, el.setScr]) s.classList.toggle("is-on", s === screen);
 }
 document.addEventListener("click", (e)=>{
   const b = e.target.closest("[data-go]");
@@ -231,6 +232,19 @@ $("#train-kana").addEventListener("click", (e)=>{
   renderGrid();
 });
 
+/* ================= せってい（おうちのひと向け） ================= */
+function renderSettings(){
+  $("#set-bones").textContent = `${B.boneCount(dig)} / ${B.TOTAL_BONES()}`;
+  const list = SETS[curKana].seion.filter(Boolean);
+  $("#set-stars").textContent = `${list.filter(got).length} / ${list.length}（${KANA_LABEL_JA[curKana]}のきほん）`;
+}
+$("#btn-settings").addEventListener("click", ()=>{
+  sfx.unlock(); sfx.pop();
+  renderSettings();
+  show(el.setScr);
+});
+$("#btn-settings-back").addEventListener("click", ()=>{ sfx.pop(); show(el.home); renderHome(); });
+
 $("#btn-reset").addEventListener("click", ()=>{
   if (!confirm("あつめた ホネと ⭐を ぜんぶ けしますか？")) return;
   for (const k of Object.keys(stamps)) delete stamps[k];
@@ -245,6 +259,7 @@ $("#btn-reset").addEventListener("click", ()=>{
   saveUiPrefs();
   renderHome();
   renderGrid();
+  renderSettings();
 });
 
 /* ================= れんしゅう（セット） ================= */
@@ -1213,7 +1228,7 @@ window.__nazorin = {
   tracer, stamps, dig, handwriting, bones: B, starsOf,
   openChar, renderGrid, renderDig, openPartSheet, closePartSheet, renderDinoDetail, openDinoDetail, closeDinoDetail,
   popBone, startSession, startPractice, show, el,
-  openCert, renderCert, openCertZoom, closeSplash, buddyFace, fitBuddy,
+  openCert, renderCert, openCertZoom, closeSplash, buddyFace, fitBuddy, renderSettings,
   buddy: ()=>({ src: (el.buddy.getAttribute("src")||"").split("/").pop(),
                 shown: el.buddy.classList.contains("is-on"),
                 size: (el.buddy.closest(".buddy-slot") || el.buddy).style.getPropertyValue("--buddy") }),

@@ -27,7 +27,7 @@
     <div class="brand">
       <h1 class="logo brand-logo"><img src="assets/chars/logo.webp" alt="よこぼの なぞって！きょうりゅう はっくつたい"></h1>
     </div>
-    <button id="btn-reset" class="mini icon" title="さいしょから やりなおす">⚙<small>さいしょから</small></button>
+    <button id="btn-settings" class="mini icon" title="せってい">⚙<small>せってい</small></button>
   </header>
 
   <section class="mission-card" aria-labelledby="mission-title">
@@ -136,6 +136,40 @@
   <button id="btn-train-go" class="btn primary train-go" disabled>もじを えらんでね</button>
 </section>
 
+<!-- ===== せってい（おうちのひと向け。ここだけ漢字で書く＝見た目で大人のページと分かる） ===== -->
+<section id="screen-settings" class="screen settings-screen" aria-labelledby="settings-title">
+  <header class="topbar">
+    <button id="btn-settings-back" class="mini back" aria-label="もどる">←<small>もどる</small></button>
+    <div class="book-heading"><span>おうちのひとへ</span><h2 class="logo" id="settings-title">せってい</h2></div>
+  </header>
+
+  <div class="settings-scroll">
+    <section class="set-block set-lab">
+      <h3>よこぼのAIラボ</h3>
+      <p>このアプリは「よこぼのAIラボ」で作っています。<br>実験室では、ほかにも遊べるものを公開しています。</p>
+      <a class="set-link" id="lab-link" href="https://yokobo-ai-lab.vercel.app/experiments" target="_blank" rel="noopener">実験室を見る ↗</a>
+    </section>
+
+    <section class="set-block">
+      <h3>つかっているもの</h3>
+      <dl class="set-rows">
+        <div><dt>文字の形と書き順</dt><dd><a href="https://kanjivg.tagaini.net" target="_blank" rel="noopener">KanjiVG</a>（CC BY-SA 3.0）</dd></div>
+        <div><dt>読み上げの声</dt><dd>VOICEVOX：春歌ナナ</dd></div>
+      </dl>
+    </section>
+
+    <section class="set-block">
+      <h3>この端末の記録</h3>
+      <dl class="set-rows">
+        <div><dt>発掘したホネ</dt><dd id="set-bones"></dd></div>
+        <div><dt>★がついた文字</dt><dd id="set-stars"></dd></div>
+      </dl>
+      <button id="btn-reset" class="btn set-reset">さいしょから やりなおす</button>
+      <p class="set-note">集めたホネと★を全部消します。もとには戻せません。</p>
+    </section>
+  </div>
+</section>
+
 <!-- ===== きょうりゅう ずかん ===== -->
 <section id="screen-dig" class="screen">
   <header class="topbar">
@@ -210,6 +244,7 @@
       <span class="cert-fill cert-day"   id="cert-day"></span>
     </div>
     <p class="cert-turn">おしたら おおきく みえるよ</p>
+    <p class="cert-lab">つくったところ：<a href="https://yokobo-ai-lab.vercel.app/experiments" target="_blank" rel="noopener">よこぼのAIラボ 実験室 ↗</a></p>
     <p class="cert-line" id="cert-line"></p>
   </div>
 

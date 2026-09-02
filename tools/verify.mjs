@@ -175,7 +175,8 @@ await sleep(400);
 const homeShape = await page.evaluate(() => {
   const r = (s)=> { const e = document.querySelector(s); return e ? e.getBoundingClientRect() : null; };
   return { cells: document.querySelectorAll("#screen-home .cell").length,
-           gear: +r("#btn-reset").width.toFixed(1), start: +r("#btn-start").width.toFixed(1),
+           gear: +r("#btn-settings").width.toFixed(1), start: +r("#btn-start").width.toFixed(1),
+           resetOnHome: !!document.querySelector("#screen-home #btn-reset"),
            dig: +r('.home-card[data-go="dig"]').width.toFixed(1),
            train: +r('.home-card[data-go="train"]').width.toFixed(1),
            kana: document.querySelectorAll("#kana-switch .kana-btn").length,
@@ -194,6 +195,8 @@ check("かなの切りかえは たんけんボタンのそば（設定の奥で
     return Math.abs(k.top - s2.bottom) < 40;
   }), `${homeShape.kana}つ`);
 check("設定は小さい", homeShape.gear < 80, `⚙${homeShape.gear}px`);
+check("「さいしょから」はホームに出しっぱなしにしない（せっていの中）",
+  homeShape.resetOnHome === false);
 await shot(page, "01_home.png");
 
 // ここから先は はっくつれんしゅう ページ
@@ -957,6 +960,40 @@ check("まっすぐ引くだけで通るのは もともと直線の画だけ",
   await page.evaluate(() => { const N = window.__nazorin; N.show(N.el.home); });
 }
 
+/* ================= せってい（おうちのひと向け） ================= */
+// 外へ出るリンクは、子どもが踏まない場所に置く。ホーム画面から起動したPWAだと
+// ブラウザが開いてアプリに戻れなくなる
+{
+  await settleRewards(page);
+  await page.evaluate(() => { const N = window.__nazorin; N.show(N.el.home); N.renderHome(); });
+  await sleep(150);
+  await page.evaluate(() => document.querySelector("#btn-settings").click());
+  await sleep(250);
+  const set = await page.evaluate(() => {
+    const a = document.querySelector("#lab-link");
+    return { on: document.querySelector("#screen-settings").classList.contains("is-on"),
+             href: a.getAttribute("href"), target: a.getAttribute("target"), rel: a.getAttribute("rel"),
+             tap: Math.round(Math.min(a.getBoundingClientRect().width, a.getBoundingClientRect().height)),
+             reset: !!document.querySelector("#screen-settings #btn-reset"),
+             bones: document.querySelector("#set-bones").textContent,
+             stars: document.querySelector("#set-stars").textContent,
+             kanji: /[一-龠]/.test(document.querySelector(".set-lab p").textContent) };
+  });
+  check("⚙ で せってい が開き、ラボへの入口がある",
+    set.on && set.href.startsWith("https://yokobo-ai-lab.vercel.app/experiments") && set.reset,
+    set.href);
+  check("外へ出るリンクは 新しいタブ＋noopener", set.target === "_blank" && (set.rel || "").includes("noopener"),
+    `${set.target} / ${set.rel}`);
+  check("せっていに この端末の記録が出る",
+    /\d+ \/ 30/.test(set.bones) && /\d+ \/ 46/.test(set.stars), `${set.bones} / ${set.stars}`);
+  // ほかの画面は全部ひらがな。ここだけ漢字＝見た目で「大人のページ」と分かる
+  check("せっていだけ漢字で書いてある", set.kanji === true);
+  check("ラボへのボタンが押せる大きさ", set.tap >= 44, `${set.tap}px`);
+  await shot(page, "22_settings.png");
+  await page.evaluate(() => document.querySelector("#btn-settings-back").click());
+  await sleep(200);
+}
+
 /* ================= 読み上げの声 ================= */
 // 焼いた声（VOICEVOX:春歌ナナ）が全字ぶんそろっているか、鳴る長さがあるか。
 // 無音を焼き損じても画面には何も出ないので、静かに壊れる側＝検査で止める。
@@ -1083,6 +1120,13 @@ check("まっすぐ引くだけで通るのは もともと直線の画だけ",
     `ふつう${zoom.normal}px → 拡大${zoom.long}px`);
   await page.evaluate(() => document.querySelector("#cert-zoom").click());
   await sleep(200);
+  const certLab = await page.evaluate(() => {
+    const a = document.querySelector(".cert-lab a");
+    return a ? { href: a.getAttribute("href"), target: a.getAttribute("target") } : null;
+  });
+  check("しょうじょうにも ラボへの入口がある",
+    !!certLab && certLab.href.includes("yokobo-ai-lab") && certLab.target === "_blank",
+    certLab ? certLab.href : "無い");
   check("しょうじょうの拡大は 押すと とじる",
     await page.$eval("#cert-zoom", e => !e.classList.contains("is-on")));
 
