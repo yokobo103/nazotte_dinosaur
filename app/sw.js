@@ -1,6 +1,6 @@
 // 自動生成。手で編集しない（作り直し: node tools/build_sw.mjs）
 // 電波が無くても開けるように、アプリ一式を先に取っておく。
-const VERSION = "59c59bb061";
+const VERSION = "204b731be3";
 const CACHE = "nazorin-" + VERSION;
 
 const FILES = [
@@ -31,6 +31,8 @@ const FILES = [
   "assets/bones/stego_body.webp",
   "assets/chars/certificate.webp",
   "assets/chars/keyvisual.webp",
+  "assets/chars/logo_training.webp",
+  "assets/chars/logo_zukan.webp",
   "assets/chars/logo.webp",
   "assets/chars/ny_good.webp",
   "assets/chars/ny_great.webp",
@@ -39,6 +41,7 @@ const FILES = [
   "assets/chars/ny_love.webp",
   "assets/chars/ny_oops.webp",
   "assets/chars/yk_cheer.webp",
+  "assets/chars/yk_dig.webp",
   "assets/chars/yk_wave.webp",
   "assets/dinosaurs/ankylosaurus_restoration.webp",
   "assets/dinosaurs/brachiosaurus_restoration.webp",

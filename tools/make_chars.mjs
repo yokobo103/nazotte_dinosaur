@@ -19,7 +19,7 @@ import path from "node:path";
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 import { readSheet, render } from "./sheet.mjs";
-import { writePNG } from "./png.mjs";
+import { readPNG, writePNG } from "./png.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(HERE, "..");
@@ -173,7 +173,47 @@ for (const f of FACES){
                `${dim.w}x${dim.h} → ${url.w}x${url.h}（白地ぬき・余白トリム）`]);
 }
 
-/* ---------- 3. キービジュアルと賞状：縮めるだけ ---------- */
+/* ---------- 3. 透過1枚もの：まわりの透明を詰めてから縮める ----------
+   ロゴやキャラ1枚は、外側の透明な余白がそのまま「見た目の小ささ」になる
+   （[[art-margin-not-enough]] と同じ話）。 */
+{
+  const ONES = [
+    { src: "yokobo_dig.png",    out: "yk_dig.webp",         w: 380, q: 0.82 },
+    { src: "logo_training.png", out: "logo_training.webp",  w: 680, q: 0.84 },
+    { src: "logo_zukan.png",    out: "logo_zukan.webp",     w: 680, q: 0.84 }
+  ];
+  for (const j of ONES){
+    const { w: W, h: H, data } = readPNG(path.join(SRC, j.src));
+    let x0 = W, y0 = H, x1 = 0, y1 = 0;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++){
+      if (data[(y*W + x)*4 + 3] > 8){
+        if (x < x0) x0 = x; if (x > x1) x1 = x;
+        if (y < y0) y0 = y; if (y > y1) y1 = y;
+      }
+    }
+    const cw = x1 - x0 + 1, ch = y1 - y0 + 1;
+    const cut = Buffer.alloc(cw * ch * 4);
+    for (let y = 0; y < ch; y++)
+      data.copy(cut, y*cw*4, ((y0+y)*W + x0)*4, ((y0+y)*W + x0 + cw)*4);
+    const tmp = "_tmp_" + j.out.replace(/\.webp$/, ".png");
+    writePNG(path.join(SRC, tmp), cw, ch, cut);
+    temps.push(tmp);
+
+    await load(srcUrl(tmp));
+    const url = await p.evaluate((outW, quality) => {
+      const im = window.__im;
+      const cv = document.createElement("canvas");
+      cv.width = outW;
+      cv.height = Math.round(outW * im.naturalHeight / im.naturalWidth);
+      cv.getContext("2d").drawImage(im, 0, 0, cv.width, cv.height);
+      return { url: cv.toDataURL("image/webp", quality), w: cv.width, h: cv.height };
+    }, j.w, j.q);
+    report.push([j.out, save(j.out, url.url),
+                 `${W}x${H} → 余白を詰めて ${cw}x${ch} → ${url.w}x${url.h}`]);
+  }
+}
+
+/* ---------- 4. キービジュアルと賞状：縮めるだけ ---------- */
 for (const j of [
   { src: "keyvisual.png",   out: "keyvisual.webp",   w: 480, q: 0.74 },
   { src: "certificate.png", out: "certificate.webp", w: 900, q: 0.80 }

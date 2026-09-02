@@ -27,7 +27,7 @@
     <div class="brand">
       <h1 class="logo brand-logo"><img src="assets/chars/logo.webp" alt="よこぼの なぞって！きょうりゅう はっくつたい"></h1>
     </div>
-    <button id="btn-reset" class="mini icon" title="さいしょから">⚙</button>
+    <button id="btn-reset" class="mini icon" title="さいしょから やりなおす">⚙<small>さいしょから</small></button>
   </header>
 
   <section class="mission-card" aria-labelledby="mission-title">
@@ -38,41 +38,34 @@
     </div>
     <div class="dig-mark" aria-hidden="true">
       <span class="dig-soil"></span>
-      <img class="dig-doc" id="home-doc" src="assets/chars/yk_wave.webp" alt="">
+      <img class="dig-doc" id="home-doc" src="assets/chars/yk_dig.webp" alt="">
     </div>
     <button id="btn-start" class="start">
       <span class="start-main" id="start-main">たんけんに でる！ <b>→</b></span>
-      <span class="start-sub" id="start-sub"></span>
     </button>
+    <!-- かなの切りかえは、あえて子どもの手の届くところに置く（自分でカタカナに行ける） -->
+    <div class="kana-pick" id="kana-switch" role="group" aria-label="なぞる もじの しゅるい">
+      <button class="kana-btn is-on" data-kana="hira">ひらがな</button>
+      <button class="kana-btn" data-kana="kata">カタカナ</button>
+    </div>
+    <p class="start-sub" id="start-sub"></p>
     <button id="btn-restart" class="restart is-hidden">さいしょから やりなおす</button>
   </section>
 
-  <section class="practice-book" aria-label="れんしゅうする文字">
-    <div class="practice-head">
-      <div>
-        <span class="eyebrow">れんしゅうちょう</span>
-        <h2>なぞる もじを えらぶ</h2>
-      </div>
-      <p class="progress" id="progress"></p>
-    </div>
-
-    <div class="seg" id="kana-switch">
-      <button class="seg-btn is-on" data-kana="hira">ひらがな</button>
-      <button class="seg-btn" data-kana="kata">カタカナ</button>
-    </div>
-
-    <div class="tabs" id="tabs">
-      <button class="tab is-on" data-set="seion">あいうえお</button>
-      <button class="tab" data-set="dakuon">だくおん</button>
-      <button class="tab" data-set="small">ちいさいじ</button>
-    </div>
-
-    <div id="grid" class="grid"></div>
-  </section>
-
-  <nav class="nav">
-    <button class="nav-btn" data-go="dig"><span class="nav-icon">🦴</span><span><b>はっくつずかん</b><small>あつめた ホネを みる</small></span><span class="nav-arrow">→</span></button>
+  <nav class="home-nav">
+    <button class="home-card card-dig" data-go="dig">
+      <span class="home-card-icon" aria-hidden="true">🦴</span>
+      <b>はっくつずかん</b>
+      <small>あつめた ホネを みる</small>
+    </button>
+    <button class="home-card card-train" data-go="train">
+      <span class="home-card-icon" aria-hidden="true">✏️</span>
+      <b>はっくつれんしゅう</b>
+      <small>おうちのひとと<br>3かい なぞる</small>
+    </button>
   </nav>
+
+  <p class="home-stars"><span id="progress"></span></p>
   <p class="credit">もじの かたち: <a href="https://kanjivg.tagaini.net" target="_blank" rel="noopener">KanjiVG</a> (CC BY-SA 3.0)　／　こえ: <span id="voice-credit">VOICEVOX:春歌ナナ</span></p>
 </section>
 
@@ -111,11 +104,43 @@
   </div>
 </section>
 
+<!-- ===== はっくつれんしゅう（親といっしょ。1もじ3かいで終わり） ===== -->
+<section id="screen-train" class="screen train-screen" aria-labelledby="train-title">
+  <header class="topbar train-topbar">
+    <button id="btn-train-back" class="mini back" aria-label="もどる">←<small>もどる</small></button>
+    <h2 class="page-logo" id="train-title"><img src="assets/chars/logo_training.webp" alt="はっくつれんしゅう"></h2>
+  </header>
+  <p class="train-lead">おうちのひとと もじを えらんで <strong>3かい</strong> なぞろう</p>
+
+  <section class="train-book">
+    <div class="seg" id="train-kana">
+      <button class="seg-btn is-on" data-kana="hira">ひらがな</button>
+      <button class="seg-btn" data-kana="kata">カタカナ</button>
+    </div>
+    <div class="tabs" id="tabs">
+      <button class="tab is-on" data-set="seion">きほん</button>
+      <button class="tab" data-set="dakuon">だくおん</button>
+      <button class="tab" data-set="small">ちいさいじ</button>
+    </div>
+    <div id="grid" class="grid"></div>
+  </section>
+
+  <div class="train-foot">
+    <div class="recent">
+      <span class="eyebrow">さいきん れんしゅうした もじ</span>
+      <div class="recent-list" id="recent-list"></div>
+    </div>
+    <p class="train-note">1もじ 3かい なぞると おわり<br>ホネは もらえないよ</p>
+  </div>
+
+  <button id="btn-train-go" class="btn primary train-go" disabled>もじを えらんでね</button>
+</section>
+
 <!-- ===== きょうりゅう ずかん ===== -->
 <section id="screen-dig" class="screen">
   <header class="topbar">
     <button class="mini back nav-btn-inline" data-go="home" aria-label="もどる">←</button>
-    <div class="book-heading"><span>はっくつきろく</span><h2 class="logo">🦴 はっくつずかん</h2></div>
+    <h2 class="page-logo zukan-logo"><img src="assets/chars/logo_zukan.webp" alt="はっくつずかん"></h2>
     <span class="bone-total" id="dig-total"></span>
   </header>
 

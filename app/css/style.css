@@ -25,17 +25,19 @@ button{font:inherit}
 .brand-logo{display:flex;align-items:center;margin:0}.brand-logo img{display:block;height:clamp(46px,17.5vw,70px);width:auto;max-width:100%;object-fit:contain;filter:drop-shadow(0 2px 0 rgba(94,63,30,.16))}
 
 /* mission */
-.mission-card{position:relative;display:grid;grid-template-columns:minmax(0,1fr) 106px;gap:6px;padding:15px 15px 12px;border:2px solid rgba(91,62,33,.2);border-radius:26px;background:var(--paper);box-shadow:0 5px 0 rgba(111,76,40,.2);overflow:hidden}
+.mission-card{position:relative;flex:1 1 auto;align-content:center;display:grid;grid-template-columns:minmax(0,1fr) 118px;gap:6px;padding:18px 15px 15px;border:2px solid rgba(91,62,33,.2);border-radius:26px;background:var(--paper);box-shadow:0 5px 0 rgba(111,76,40,.2);overflow:hidden}
 .mission-card::before{content:"";position:absolute;inset:auto -20px -28px -20px;height:62px;border-radius:50% 50% 0 0;background:#ad7746;opacity:.16}
 .mission-copy{position:relative;z-index:1;min-width:0}.eyebrow{display:block;color:var(--teal-dark);font-size:10px;font-weight:900;letter-spacing:.08em}
 .mission-copy h2{margin:5px 0 5px;font-size:clamp(18px,5.1vw,23px);line-height:1.28}.mission-copy h2 strong{color:var(--orange);font-weight:900}.mission-status{margin:0;color:var(--sub);font-size:11px;font-weight:700}
-.dig-mark{position:relative;min-height:80px}
+.dig-mark{position:relative;min-height:96px}
 /* 土の山をやめた。Dr.よこぼの あごが山に埋まって、顔だけ置いてあるように見えていた。
    なぞる画面の相棒と同じ「うすい影」にそろえる */
-.dig-doc{position:absolute;left:50%;bottom:6px;z-index:2;width:122px;height:auto;transform:translateX(-50%);filter:drop-shadow(0 4px 0 rgba(74,49,27,.14))}
-.dig-soil{position:absolute;left:50%;bottom:4px;transform:translateX(-50%);width:92px;height:19px;border-radius:50%;background:#bc9463;opacity:.34}
-.start{position:relative;z-index:2;grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:2px;flex-direction:column;border:0;border-radius:18px;padding:11px 12px;margin-top:7px;min-height:57px;background:var(--orange);color:#fff;cursor:pointer;box-shadow:0 4px 0 var(--orange-dark)}
-.start-main{font-size:19px;font-weight:900;letter-spacing:.03em}.start-main b{display:inline-block;margin-left:6px;font-size:23px}.start-sub{font-size:10px;font-weight:700;opacity:.9}
+.dig-doc{position:absolute;left:50%;bottom:0;z-index:2;width:clamp(122px,38vw,158px);height:auto;transform:translateX(-50%);filter:drop-shadow(0 4px 0 rgba(74,49,27,.14))}
+.dig-soil{display:none}
+.start{position:relative;z-index:2;grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:2px;flex-direction:column;border:0;border-radius:20px;padding:14px 12px;margin-top:12px;min-height:64px;background:var(--orange);color:#fff;cursor:pointer;box-shadow:0 4px 0 var(--orange-dark)}
+.start-main{font-size:20px;font-weight:900;letter-spacing:.03em}.start-main b{display:inline-block;margin-left:8px;font-size:23px}
+/* 説明はボタンの外へ。ボタンの中に小さい字を入れると、押す場所の主役がぼやける */
+.start-sub{grid-column:1/-1;margin:7px 2px 0;color:var(--sub);font-size:11px;font-weight:800;text-align:center}
 
 /* practice */
 .practice-book{min-height:0;flex:1;display:flex;flex-direction:column;margin-top:10px;padding:10px 9px 8px;border:1px solid rgba(102,72,43,.12);border-radius:23px 23px 10px 10px;background:rgba(255,250,240,.9);box-shadow:0 3px 0 rgba(111,76,40,.14)}
@@ -53,7 +55,7 @@ button{font:inherit}
 
 /* trace: 発掘現場の中に、読みやすい文字ボードを置く */
 #screen-trace{background:radial-gradient(circle at 7% 27%,rgba(126,89,50,.11) 0 3px,transparent 4px),radial-gradient(circle at 92% 20%,rgba(126,89,50,.08) 0 4px,transparent 5px),linear-gradient(180deg,#f8e9cb 0%,#f2dcaf 100%);background-size:110px 130px,150px 170px,auto}
-#screen-trace .topbar{min-height:60px}.trace-title{flex:1;min-width:0;text-align:center;line-height:1.15}.trace-title .trace-zone{display:inline-block;padding:4px 10px;margin-bottom:3px;border-radius:7px;background:#d9b878;color:#60451f;font-size:10px;font-weight:900;letter-spacing:.07em;box-shadow:inset 0 0 0 1px rgba(93,63,29,.1)}.trace-title strong{display:block;color:var(--teal-dark);font-size:10px;letter-spacing:.08em}.mini.icon small{display:block;margin-top:1px;font-size:8px;font-weight:900}.word{display:flex;align-items:center;justify-content:center;gap:16px;min-height:58px;padding:2px 10px 5px}.trace-char{font-size:clamp(42px,13vw,58px);line-height:1;color:var(--ink)}.trace-example{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:6px;min-width:0;padding:7px 12px;border-radius:15px;background:rgba(255,250,240,.72);color:var(--sub)}.trace-example span{font-size:25px;line-height:1}.trace-example b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px;color:var(--ink)}
+#screen-trace .topbar{min-height:60px}.trace-title{flex:1;min-width:0;text-align:center;line-height:1.15}.trace-title .trace-zone{display:inline-block;padding:4px 10px;margin-bottom:3px;border-radius:7px;background:#d9b878;color:#60451f;font-size:10px;font-weight:900;letter-spacing:.07em;box-shadow:inset 0 0 0 1px rgba(93,63,29,.1)}.trace-title strong{display:block;color:var(--teal-dark);font-size:10px;letter-spacing:.08em}.mini.icon small,.mini.back small{display:block;margin-top:1px;font-size:8px;font-weight:900}.word{display:flex;align-items:center;justify-content:center;gap:16px;min-height:58px;padding:2px 10px 5px}.trace-char{font-size:clamp(42px,13vw,58px);line-height:1;color:var(--ink)}.trace-example{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:6px;min-width:0;padding:7px 12px;border-radius:15px;background:rgba(255,250,240,.72);color:var(--sub)}.trace-example span{font-size:25px;line-height:1}.trace-example b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px;color:var(--ink)}
 .sess{display:none;align-items:center;justify-content:center;gap:8px;min-height:45px;padding:5px 8px 7px;margin:0 auto;color:var(--sub);font-size:11px;border-radius:15px;background:rgba(255,250,240,.76);box-shadow:0 2px 0 rgba(111,76,40,.12)}.sess.is-on{display:flex}.sess-label{min-width:48px;color:var(--teal-dark);font-size:16px;font-weight:900;text-align:center}.sess-label small{margin-left:1px;font-size:8px}.sess .dots{font-size:13px;letter-spacing:3px;color:#cab896;white-space:nowrap}.sess .dots b{color:var(--teal)}.bone-dots{display:flex;gap:1px;white-space:nowrap}.bone-dots b,.bone-dots span{font-size:14px;letter-spacing:-3px}.bone-dots span{filter:grayscale(1) brightness(.72);opacity:.48}.sess-rep{color:var(--orange-dark);font-size:12px;font-weight:900;white-space:nowrap}.sess-rep small{display:block;margin-top:1px;color:var(--sub);font-size:7px;font-weight:800}.sess[data-mode="practice"] .sess-label{font-size:10px}.sess[data-mode="practice"] .sess-rep small{font-size:7px}
 .stage{position:relative;min-height:0;flex:1;display:flex;align-items:center;justify-content:center;padding:7px 0}.stage::before,.stage::after{content:"";position:absolute;pointer-events:none;opacity:.24}.stage::before{left:0;bottom:12%;width:25px;height:15px;border-radius:50% 45% 40% 55%;background:#9a7148;transform:rotate(-12deg)}.stage::after{right:2px;top:17%;width:19px;height:12px;border-radius:40% 55% 45%;background:#b18b5d;transform:rotate(18deg)}.canvas-wrap{position:relative;line-height:0;padding:8px;border:2px solid #c9a668;border-radius:25px;background:#d9bc84;box-shadow:0 5px 0 #ad8551,0 9px 22px rgba(94,65,34,.12)}.canvas-wrap::before,.canvas-wrap::after{content:"";position:absolute;width:9px;height:9px;border-radius:50%;background:#9a7549;z-index:2}.canvas-wrap::before{left:12px;top:12px}.canvas-wrap::after{right:12px;bottom:12px}.board-label{position:absolute;left:50%;top:-10px;z-index:4;transform:translateX(-50%);padding:4px 13px;border-radius:999px;background:var(--teal);color:#fff;font-size:8px;font-weight:900;line-height:1;white-space:nowrap;box-shadow:0 2px 0 var(--teal-dark)}#canvas{display:block;border-radius:18px;background:#fffdf8;box-shadow:inset 0 0 0 1px rgba(100,70,38,.08);touch-action:none}
 .praise{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:0;transform:scale(.6);transition:opacity .18s,transform .28s cubic-bezier(.2,1.6,.4,1);z-index:5}.praise.is-on{opacity:1;transform:scale(1)}.praise.top{inset:auto 0 100%;padding-bottom:8px;align-items:flex-end}.praise span{padding:.34em .85em;border-radius:999px;background:#fff;color:var(--orange-dark);font-size:clamp(24px,8vw,43px);line-height:1.3;box-shadow:0 6px 20px rgba(100,65,30,.22);white-space:nowrap}.praise.top span{font-size:clamp(16px,5vw,24px)}.praise.top.big span{font-size:clamp(18px,5.8vw,29px)}
@@ -187,3 +189,55 @@ button{font:inherit}
 /* ずかんの先頭に出す「しょうじょうを みる」 */
 .page.cert-card{background:#fff3cf;border-color:#e6c469;box-shadow:0 3px 0 #dcb75f;text-align:center}
 .cert-card .page-title{font-size:16px}.cert-card p{margin:4px 2px 9px;color:var(--soil);font-size:11px;font-weight:800}
+
+/* ===== ホーム（2026-09-02 に組みかえ。50音表は はっくつれんしゅう へ移した） ===== */
+/* かなの切りかえ。設定の奥に隠さず、押すボタンのすぐ下に置く
+   ＝子どもが自分でカタカナに行ける（所長の指定） */
+.kana-pick{grid-column:1/-1;display:flex;gap:5px;padding:4px;margin-top:8px;border-radius:14px;background:#eadabd}
+.kana-btn{flex:1;border:0;border-radius:11px;min-height:40px;padding:8px 4px;background:transparent;color:var(--sub);font-size:14px;font-weight:800;cursor:pointer}
+.kana-btn.is-on{background:var(--teal);color:#fff;box-shadow:0 2px 0 var(--teal-dark)}
+.kana-btn:active{transform:translateY(2px)}
+
+/* ずかん と れんしゅう。たんけんが主役なので、この2つは一段小さい */
+.home-nav{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:auto;padding:11px 0 0}
+.home-card{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;min-height:clamp(104px,19vh,158px);padding:14px 10px;border:2px solid rgba(91,62,33,.16);border-radius:22px;background:var(--paper);color:var(--ink);cursor:pointer;text-align:center;box-shadow:0 4px 0 rgba(111,76,40,.18)}
+.home-card:active{transform:translateY(3px);box-shadow:none}
+.home-card b{font-size:16px;line-height:1.25}
+.home-card small{color:var(--sub);font-size:10px;font-weight:700;line-height:1.4}
+.home-card-icon{font-size:34px;line-height:1}
+.card-dig{background:#e9f4f0;border-color:#a8cfc4}
+.card-train{background:#fff3e2;border-color:#e8bf88}
+.home-stars{margin:9px 0 0;text-align:center}
+.home-stars span{display:inline-block;padding:6px 14px;border-radius:999px;background:var(--paper);color:var(--soil);font-size:12px;font-weight:900;box-shadow:0 2px 0 rgba(111,76,40,.16)}
+.home-stars span:empty{display:none}
+
+/* ===== はっくつれんしゅう ===== */
+/* ページの見出しはロゴ画像。ホームのボタンは文字のまま
+   （ロゴは横長で、ボタンの大きさに縮めると読めない） */
+.page-logo{flex:1;min-width:0;margin:0;display:flex;align-items:center;justify-content:center}
+.page-logo img{display:block;height:clamp(38px,12vw,52px);width:auto;max-width:100%;object-fit:contain;filter:drop-shadow(0 2px 0 rgba(94,63,30,.16))}
+.train-topbar{gap:6px}
+#screen-train{background:radial-gradient(circle at 12% 22%,rgba(126,89,50,.09) 0 3px,transparent 4px),linear-gradient(180deg,#f9ecd3 0%,#f4dfb5 100%);background-size:120px 140px,auto}
+.train-lead{margin:0 0 8px;color:var(--soil);font-size:12px;font-weight:800;text-align:center}
+.train-lead strong{color:var(--orange-dark)}
+.train-book{min-height:0;flex:1;display:flex;flex-direction:column;padding:10px 9px 8px;border:1px solid rgba(102,72,43,.12);border-radius:22px;background:rgba(255,250,240,.92);box-shadow:0 3px 0 rgba(111,76,40,.14)}
+.train-foot{display:flex;align-items:center;gap:10px;padding:9px 12px;margin-top:9px;border-radius:17px;background:rgba(255,250,240,.72)}
+.recent{flex:1;min-width:0}
+.recent-list{display:flex;gap:5px;margin-top:4px}
+.recent-list span{width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:1px solid var(--line);border-radius:9px;background:#fff;font-size:19px}
+.recent-list:empty::after{content:"まだ ないよ";color:var(--sub);font-size:10px;font-weight:700}
+.train-note{flex:0 0 auto;margin:0;padding-left:10px;border-left:1px dashed #cbb181;color:var(--sub);font-size:10px;font-weight:800;line-height:1.5;text-align:center}
+.cell.is-picked{background:#ffe6c8;border-color:var(--orange);box-shadow:0 3px 0 #e6aa74}
+.train-go{flex:0 0 auto;width:100%;margin-top:9px;min-height:58px;max-height:58px;font-size:17px}
+
+/* たてに余裕がある画面だけ、ミッションカードの伸びを止める（伸びすぎると間が抜ける） */
+@media (min-height:700px){ .mission-card{max-height:52vh} }
+/* よこ向きは、ぜんぶは入らない。切るのではなくスクロールさせる（たて持ち前提のアプリ） */
+@media (max-height:560px) and (orientation:landscape){
+  #screen-home{overflow-y:auto}
+  .mission-card{flex:0 0 auto;grid-template-columns:minmax(0,1fr);padding:12px 14px 12px}
+  .dig-mark{display:none}
+  .start{margin-top:8px;min-height:56px}
+  .home-nav{margin-top:10px}
+  .home-card{min-height:92px}
+}

@@ -170,25 +170,45 @@ check("はじまりの絵が ひとりでに引く（押さなくても消える
   splashMs >= 0 && splashMs < 2600, splashMs < 0 ? "消えなかった" : `${splashMs}ms`);
 await sleep(400);
 
-/* ================= 1. 50音表 ================= */
-check("ひらがな表に46字ならぶ", await page.$$eval(".cell:not(.blank)", e => e.length) === 46);
-await shot(page, "01_table.png");
-
-const bar = await page.evaluate(() => {
-  const r = (s)=> document.querySelector(s).getBoundingClientRect();
-  return { gear: +r("#btn-reset").width.toFixed(1), start: +r("#btn-start").width.toFixed(1),
-           nav: +r('.nav-btn[data-go="dig"]').width.toFixed(1), vw: window.innerWidth };
+/* ================= 1. ホームと 50音表 ================= */
+// ホームに50音表は無い。表は「はっくつれんしゅう」ページへ移した（2026-09-02）
+const homeShape = await page.evaluate(() => {
+  const r = (s)=> { const e = document.querySelector(s); return e ? e.getBoundingClientRect() : null; };
+  return { cells: document.querySelectorAll("#screen-home .cell").length,
+           gear: +r("#btn-reset").width.toFixed(1), start: +r("#btn-start").width.toFixed(1),
+           dig: +r('.home-card[data-go="dig"]').width.toFixed(1),
+           train: +r('.home-card[data-go="train"]').width.toFixed(1),
+           kana: document.querySelectorAll("#kana-switch .kana-btn").length,
+           vw: window.innerWidth };
 });
-check("設定は小さく、スタートと行き来ボタンは大きい",
-  bar.gear < 70 && bar.start > bar.vw * 0.8 && bar.nav > bar.vw * 0.8,
-  `⚙${bar.gear}px / スタート${bar.start}px / ずかんへ${bar.nav}px`);
+check("ホームに50音表は無い（表はれんしゅうページへ）", homeShape.cells === 0, `${homeShape.cells}マス`);
+check("ホームのボタンは たんけん・ずかん・れんしゅう の3つ",
+  homeShape.start > homeShape.vw * 0.8 && homeShape.dig > 0 && homeShape.train > 0 &&
+  homeShape.start > homeShape.dig * 1.5,
+  `たんけん${homeShape.start}px / ずかん${homeShape.dig}px / れんしゅう${homeShape.train}px`);
+check("かなの切りかえは たんけんボタンのそば（設定の奥ではない）",
+  homeShape.kana === 2 &&
+  await page.evaluate(() => {
+    const k = document.querySelector("#kana-switch").getBoundingClientRect();
+    const s2 = document.querySelector("#btn-start").getBoundingClientRect();
+    return Math.abs(k.top - s2.bottom) < 40;
+  }), `${homeShape.kana}つ`);
+check("設定は小さい", homeShape.gear < 80, `⚙${homeShape.gear}px`);
+await shot(page, "01_home.png");
+
+// ここから先は はっくつれんしゅう ページ
+await page.evaluate(() => document.querySelector('.home-card[data-go="train"]').click());
+await sleep(250);
+check("はっくつれんしゅうに ひらがな46字ならぶ",
+  await page.$$eval("#screen-train .cell:not(.blank)", e => e.length) === 46);
+await shot(page, "01b_train.png");
 
 await page.click('.tab[data-set="dakuon"]'); await sleep(150);
 check("だくおんタブに25字", await page.$$eval(".cell:not(.blank)", e => e.length) === 25);
 await page.click('.tab[data-set="seion"]'); await sleep(150);
 
 /* ================= 2. カタカナ ================= */
-await page.click('#kana-switch .seg-btn[data-kana="kata"]');
+await page.click('#train-kana .seg-btn[data-kana="kata"]');
 await sleep(200);
 const kataCells = await page.$$eval(".cell:not(.blank)", els => els.map(e => e.textContent));
 check("カタカナ表に46字ならぶ", kataCells.length === 46, kataCells.slice(0, 5).join(""));
@@ -335,36 +355,71 @@ await sleep(2600);
 const bones = () => page.evaluate(() => window.__nazorin.bones.boneCount(window.__nazorin.dig));
 const rules = await page.evaluate(() => ({ REPS: window.__nazorin.REPS, SET: window.__nazorin.SET }));
 
-// カタカナ表から選ぶ通常練習も、同じ字を3回書いたら自動で次の字へ進む
+// はっくつれんしゅうは「えらぶ → 確かめる → 3回で終わり」
 await page.evaluate(() => {
   const N = window.__nazorin;
-  N.show(N.el.home);
+  N.show(N.el.train);
   N.setKana("kata");
   N.setCategory("seion");
 });
+await settleRewards(page);        // 前のセットのごほうびが開いたままだと、次が出せない
+await page.evaluate(() => { window.__nazorin.show(window.__nazorin.el.train); });
+await sleep(200);
+const beforePick = await page.$eval("#btn-train-go", e => e.disabled);
 await page.evaluate(() => [...document.querySelectorAll("#grid .cell")].find(b => b.textContent === "ア").click());
+await sleep(200);
+const picked = await page.evaluate(() => ({
+  disabled: document.querySelector("#btn-train-go").disabled,
+  label: document.querySelector("#btn-train-go").textContent,
+  onGrid: [...document.querySelectorAll("#grid .cell.is-picked")].map(e => e.textContent).join(""),
+  started: window.__nazorin.session?.mode === "practice"
+}));
+check("字を押しただけでは始まらない（えらんだ印がつく）",
+  beforePick === true && picked.disabled === false && picked.onGrid === "ア" && !picked.started,
+  `ボタン「${picked.label}」`);
+await page.evaluate(() => document.querySelector("#btn-train-go").click());
 await sleep(350);
 const free0 = await bones();
 const practiceSteps = [];
 for (let rep = 0; rep < rules.REPS; rep++){
   const n = await page.evaluate(() => window.__nazorin.tracer.strokes.length);
   for (let i = 0; i < n; i++) await traceStroke(page, i, { jitter: 3 });
-  await sleep(1900);
+  await sleep(2100);
   practiceSteps.push(await page.evaluate(() => ({
     ch: window.__nazorin.char,
     rep: window.__nazorin.session?.rep,
     mode: window.__nazorin.session?.mode,
+    over: !window.__nazorin.session,
     nextHidden: document.querySelector("#btn-next").classList.contains("is-hidden")
   })));
 }
-check("カタカナ通常練習は アを3回書いてから自動でイへ進む",
-  practiceSteps[0].ch === "ア" && practiceSteps[0].rep === 1 &&
-  practiceSteps[1].ch === "ア" && practiceSteps[1].rep === 2 &&
-  practiceSteps[2].ch === "イ" && practiceSteps[2].rep === 0 &&
-  practiceSteps.every(s => s.mode === "practice" && s.nextHidden),
-  practiceSteps.map(s => `${s.ch}:${s.rep}`).join(" → "));
-check("通常練習を続けても ホネはもらえない", (await bones()) === free0, `${free0} → ${await bones()}`);
-await page.click("#btn-back"); await sleep(250);
+// 以前は ア→イ→ウ… と表を無限に流れていた。「ぬを繰り返したい」に一度も応えられず、
+// 終わりも無かった。いまは えらんだ字だけ3回で終わる
+check("はっくつれんしゅうは えらんだ字だけを3回書いて終わる",
+  practiceSteps[0].ch === "ア" && practiceSteps[0].rep === 1 && !practiceSteps[0].over &&
+  practiceSteps[1].ch === "ア" && practiceSteps[1].rep === 2 && !practiceSteps[1].over &&
+  practiceSteps[2].over === true &&
+  practiceSteps.slice(0, 2).every(s => s.mode === "practice" && s.nextHidden),
+  practiceSteps.map(s => s.over ? "おわり" : `${s.ch}:${s.rep}`).join(" → "));
+check("はっくつれんしゅうでは ホネはもらえない", (await bones()) === free0, `${free0} → ${await bones()}`);
+// ごほうびは「3回目の判定 → 1.7秒で進む → さらに0.5秒」で出る。出るまで待つ
+for (let i = 0; i < 30; i++){
+  if (await page.$eval("#reward", e => e.classList.contains("is-on"))) break;
+  await sleep(200);
+}
+const afterPractice = await page.evaluate(() => ({
+  reward: document.querySelector("#reward").classList.contains("is-on"),
+  title: document.querySelector("#reward-title").textContent,
+  recent: [...document.querySelectorAll("#recent-list span")].map(e => e.textContent).join("")
+}));
+check("3かい書けたら「なぞれた！」が出て、さいきんの もじに残る",
+  afterPractice.reward && afterPractice.title.includes("3かい") && afterPractice.recent.includes("ア"),
+  `${afterPractice.title} / さいきん:${afterPractice.recent}`);
+await settleRewards(page);
+check("れんしゅうのあとは れんしゅうページに もどる",
+  await page.$eval("#screen-train", e => e.classList.contains("is-on")));
+await page.evaluate(() => document.querySelector("#btn-train-back").click());
+await sleep(250);
 await page.evaluate(() => window.__nazorin.setKana("hira"));
 
 // セットを1つ走りきると ホネが1個
@@ -409,10 +464,11 @@ const skip = await page.evaluate(() => {
 check("れんしゅう中は「つぎ」で飛ばせない", skip.hidden && !skip.shown, JSON.stringify(skip));
 await page.evaluate(() => document.querySelector("#btn-back").click());
 await sleep(300);
-check("通常練習でも「つぎ」は隠れ、3回後に自動で進む",
+check("はっくつれんしゅう中も「つぎ」は隠れている",
   await page.evaluate(() => { window.__nazorin.startPractice("た");
     return document.querySelector("#btn-next").classList.contains("is-hidden") &&
-      window.__nazorin.session.mode === "practice"; }));
+      window.__nazorin.session.mode === "practice" &&
+      window.__nazorin.session.chars.length === 1; }));
 await page.evaluate(() => document.querySelector("#btn-back").click());
 await sleep(200);
 await shot(page, "14_set_done.png");
@@ -1073,12 +1129,15 @@ await page.setOfflineMode(true);
 await page.reload({ waitUntil: "domcontentloaded" });
 await sleep(1200);
 await passSplash(page);
-const offlineView = await page.evaluate(() => ({
-  title: document.title,
-  cells: document.querySelectorAll(".cell:not(.blank)").length,
-  art:   !!document.querySelector("#btn-start")
-}));
-check("電波が無くても ひらける", offlineView.cells === 46 && offlineView.art,
+const offlineView = await page.evaluate(() => {
+  document.querySelector('.home-card[data-go="train"]').click();
+  return { title: document.title,
+           cells: document.querySelectorAll("#screen-train .cell:not(.blank)").length,
+           art:   !!document.querySelector("#btn-start"),
+           logo:  !!document.querySelector("#train-title img") };
+});
+check("電波が無くても ひらける（れんしゅうの表・ロゴまで出る）",
+  offlineView.cells === 46 && offlineView.art && offlineView.logo,
   `${offlineView.cells}マス / ${offlineView.title}`);
 await shot(page, "17_offline.png");
 await page.setOfflineMode(false);

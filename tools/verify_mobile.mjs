@@ -114,19 +114,40 @@ for (const d of DEVICES) {
     `中身${overflow.doc}px / 画面${overflow.win}px`);
   check(d.name, "ページ自体がスクロールしない", overflow.bodyScroll <= 1, `${overflow.bodyScroll}px`);
 
-  /* --- 表のマスが指で押せる大きさか --- */
-  const cell = await page.$eval(".cell:not(.blank)", e => {
+  /* --- ホームの3つのボタンが指で押せるか --- */
+  const homeTaps = await page.evaluate(() => {
+    const els = [...document.querySelectorAll("#screen-home .start, #screen-home .home-card, #screen-home .kana-btn, #screen-home .mini")];
+    return els.map(e => { const r = e.getBoundingClientRect(); return +Math.min(r.width, r.height).toFixed(1); });
+  });
+  check(d.name, "ホームのボタンが40px以上", Math.min(...homeTaps) >= 40,
+    `いちばん小さい辺 ${Math.min(...homeTaps)}px`);
+  await page.screenshot({ path: path.join(QA, `${slug}_1_home.png`) });
+
+  /* --- 表のマスが指で押せる大きさか（はっくつれんしゅう） --- */
+  await page.evaluate(() => document.querySelector('.home-card[data-go="train"]').click());
+  await sleep(300);
+  const cell = await page.$eval("#screen-train .cell:not(.blank)", e => {
     const r = e.getBoundingClientRect(); return { w: +r.width.toFixed(1), h: +r.height.toFixed(1) };
   });
   check(d.name, "表のマスが44px以上", cell.w >= 44 && cell.h >= 44, `${cell.w}x${cell.h}`);
 
   const barOk = await page.evaluate(() => {
-    const els = [...document.querySelectorAll("#screen-home .mini, #screen-home .tab, #screen-home .seg-btn")];
+    const els = [...document.querySelectorAll("#screen-train .mini, #screen-train .tab, #screen-train .seg-btn, #screen-train .btn")];
     return els.map(e => { const r = e.getBoundingClientRect(); return +Math.min(r.width, r.height).toFixed(1); });
   });
   check(d.name, "ヘッダ・タブが36px以上", Math.min(...barOk) >= 36, `いちばん小さい辺 ${Math.min(...barOk)}px`);
 
+  const trainOverflow = await page.evaluate(() => ({
+    doc: document.documentElement.scrollWidth, win: window.innerWidth,
+    goBottom: Math.round(document.querySelector("#btn-train-go").getBoundingClientRect().bottom),
+    vh: window.innerHeight
+  }));
+  check(d.name, "れんしゅうページが画面に収まる",
+    trainOverflow.doc <= trainOverflow.win + 1 && trainOverflow.goBottom <= trainOverflow.vh + 1,
+    `はみ出し${trainOverflow.doc - trainOverflow.win}px / ボタン下端${trainOverflow.goBottom}/${trainOverflow.vh}`);
   await page.screenshot({ path: path.join(QA, `${slug}_1_table.png`) });
+  await page.evaluate(() => document.querySelector("#btn-train-back").click());
+  await sleep(250);
 
   /* --- ホーム画面に置けるか（マニフェストとアイコン） --- */
   const home = await page.evaluate(async () => {

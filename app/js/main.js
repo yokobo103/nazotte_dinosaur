@@ -39,6 +39,10 @@ const el = {
   rewardHand:$("#reward-handwriting"),
   sheet:     $("#part-sheet"),
   certScr:   $("#screen-cert"),
+  train:     $("#screen-train"),
+  recent:    $("#recent-list"),
+  trainGo:   $("#btn-train-go"),
+  kanaPick:  $("#kana-switch"),
   buddy:     $("#buddy"),
   rewardFace:$("#reward-face"),
   rewardAchievements:$("#reward-achievements")
@@ -73,12 +77,15 @@ function loadUiPrefs(){
     const raw = JSON.parse(localStorage.getItem(UI_KEY)) || {};
     return {
       kana: raw.kana === "kata" ? "kata" : "hira",
-      set: ["seion", "dakuon", "small"].includes(raw.set) ? raw.set : "seion"
+      set: ["seion", "dakuon", "small"].includes(raw.set) ? raw.set : "seion",
+      recent: Array.isArray(raw.recent) ? raw.recent.filter(c => typeof c === "string").slice(0, 3) : []
     };
-  } catch { return { kana: "hira", set: "seion" }; }
+  } catch { return { kana: "hira", set: "seion", recent: [] }; }
 }
 function saveUiPrefs(){
-  try { localStorage.setItem(UI_KEY, JSON.stringify({ kana: curKana, set: curSet })); } catch {}
+  try {
+    localStorage.setItem(UI_KEY, JSON.stringify({ kana: curKana, set: curSet, recent: uiPrefs.recent || [] }));
+  } catch {}
 }
 
 /* 完成した筆跡はCanvas画像ではなく109座標系の点列で保存する。
@@ -103,21 +110,56 @@ const starStr = (ch)=> got(ch) ? "★".repeat(starsOf(bestOf(ch) || 1)) : "";
 
 /* ================= 画面きりかえ ================= */
 function show(screen){
-  for (const s of [el.home, el.trace, el.digScr, el.dinoScr, el.certScr]) s.classList.toggle("is-on", s === screen);
+  for (const s of [el.home, el.trace, el.digScr, el.dinoScr, el.certScr, el.train]) s.classList.toggle("is-on", s === screen);
 }
 document.addEventListener("click", (e)=>{
   const b = e.target.closest("[data-go]");
   if (!b) return;
   sfx.unlock(); sfx.pop();
   if (b.dataset.go === "dig"){ show(el.digScr); renderDig(); }
-  else { show(el.home); renderGrid(); }
+  else if (b.dataset.go === "train"){ show(el.train); renderGrid(); }
+  else { show(el.home); renderHome(); }
 });
 
-/* ================= 50音表 ================= */
+/* ================= ホーム =================
+   50音表は「はっくつれんしゅう」へ移した。ホームに残るつまみは かなの種別ひとつだけ。
+   設定の奥に隠さず、押すボタンのすぐ下に置く＝子どもが自分でカタカナに行ける。 */
+const KANA_LABEL_JA = { hira: "ひらがな", kata: "カタカナ" };
+
+function renderHome(){
+  [...el.kanaPick.children].forEach(x => x.classList.toggle("is-on", x.dataset.kana === curKana));
+  el.missionMode.textContent = `${KANA_LABEL_JA[curKana]}の はっくつミッション`;
+  refreshStart();
+  const bones = B.boneCount(dig);
+  el.homeBones.textContent = bones >= B.TOTAL_BONES()
+    ? "ぜんぶの ホネを はっくつしたよ！"
+    : `はっくつした ホネ　${bones} / ${B.TOTAL_BONES()}`;
+  // ★は「ミッションで出る きほん46字」に対して数える（表の範囲ごとに変わると意味が読めない）
+  const list = SETS[curKana].seion.filter(Boolean);
+  el.prog.textContent = `⭐ ${list.filter(got).length} / ${list.length}`;
+}
+
+el.kanaPick.addEventListener("click", (e)=>{
+  const t = e.target.closest(".kana-btn");
+  if (!t || t.dataset.kana === curKana) return;
+  sfx.unlock(); sfx.pop();
+  curKana = t.dataset.kana;
+  saveUiPrefs();
+  session = null;          // 種別が変わったら、とまっているミッションは持ちこさない
+  renderHome();
+});
+
+/* ================= はっくつれんしゅう（50音表） =================
+   親と一緒に使うページ。字を選んで確かめてから始める（誤タップで始まらない）。
+   1もじ3かいで終わり。ホネは出ない ＝ ミッションの「15回で1個」を崩さない。 */
+let pickedChar = null;
+
 function renderGrid(){
-  [...$("#kana-switch").children].forEach(x=>x.classList.toggle("is-on", x.dataset.kana === curKana));
+  [...$("#train-kana").children].forEach(x=>x.classList.toggle("is-on", x.dataset.kana === curKana));
   [...el.tabs.children].forEach(x=>x.classList.toggle("is-on", x.dataset.set === curSet));
   el.grid.innerHTML = "";
+  const list = SETS[curKana][curSet].filter(Boolean);
+  if (!list.includes(pickedChar)) pickedChar = null;
   for (const ch of SETS[curKana][curSet]){
     if (!ch){
       const b = document.createElement("div");
@@ -126,42 +168,64 @@ function renderGrid(){
       continue;
     }
     const b = document.createElement("button");
-    b.className = "cell" + (got(ch) ? " done" : "");
+    b.className = "cell" + (got(ch) ? " done" : "") + (ch === pickedChar ? " is-picked" : "");
     b.textContent = ch;
     if (got(ch)) b.dataset.stars = starStr(ch);
     b.setAttribute("aria-label", readingOf(ch));
-    // 表から選ぶ通常練習も、同じ字を3回書いたら自動で次の字へ進む。
-    // ホネだけは「たんけんに でる」の5文字セットで受け取る。
-    b.addEventListener("click", ()=>{ sfx.unlock(); sfx.pop(); startPractice(ch); });
+    b.addEventListener("click", ()=>{ sfx.unlock(); sfx.pop(); pickTrainChar(ch); });
     el.grid.appendChild(b);
   }
-  const list = SETS[curKana][curSet].filter(Boolean);
-  el.prog.textContent = `⭐ ${list.filter(got).length} / ${list.length}`;
-  const kanaLabel = curKana === "kata" ? "カタカナ" : "ひらがな";
-  const setLabel = { seion:"きほん", dakuon:"だくおん", small:"ちいさいじ" }[curSet];
-  el.missionMode.textContent = `${kanaLabel}の はっくつミッション`;
-  refreshStart();
-  const bones = B.boneCount(dig);
-  el.homeBones.textContent = bones >= B.TOTAL_BONES()
-    ? "ぜんぶの ホネを はっくつしたよ！"
-    : `はっくつした ホネ　${bones} / ${B.TOTAL_BONES()}`;
+  renderRecent();
+  renderTrainGo();
 }
+
+function pickTrainChar(ch){
+  pickedChar = ch;
+  [...el.grid.children].forEach(b => b.classList.toggle("is-picked", b.textContent === ch));
+  renderTrainGo();
+}
+
+function renderTrainGo(){
+  el.trainGo.disabled = !pickedChar;
+  el.trainGo.textContent = pickedChar ? `「${pickedChar}」を れんしゅう →` : "もじを えらんでね";
+}
+
+function renderRecent(){
+  el.recent.innerHTML = "";
+  for (const ch of uiPrefs.recent || []){
+    const s2 = document.createElement("span");
+    s2.textContent = ch;
+    el.recent.appendChild(s2);
+  }
+}
+
+function pushRecent(ch){
+  const list = (uiPrefs.recent || []).filter(c => c !== ch);
+  list.unshift(ch);
+  uiPrefs.recent = list.slice(0, 3);
+  saveUiPrefs();
+}
+
+el.trainGo.addEventListener("click", ()=>{
+  if (!pickedChar) return;
+  sfx.unlock(); sfx.pop();
+  startPractice(pickedChar);
+});
+$("#btn-train-back").addEventListener("click", ()=>{ sfx.pop(); show(el.home); renderHome(); });
 
 el.tabs.addEventListener("click", (e)=>{
   const t = e.target.closest(".tab");
   if (!t) return;
   sfx.unlock(); sfx.pop();
-  [...el.tabs.children].forEach(x=>x.classList.toggle("is-on", x === t));
   curSet = t.dataset.set;
   saveUiPrefs();
   renderGrid();
 });
 
-$("#kana-switch").addEventListener("click", (e)=>{
+$("#train-kana").addEventListener("click", (e)=>{
   const t = e.target.closest(".seg-btn");
   if (!t) return;
   sfx.unlock(); sfx.pop();
-  [...t.parentNode.children].forEach(x=>x.classList.toggle("is-on", x === t));
   curKana = t.dataset.kana;
   saveUiPrefs();
   renderGrid();
@@ -177,6 +241,9 @@ $("#btn-reset").addEventListener("click", ()=>{
   handwriting.sessions.length = 0;
   try { localStorage.removeItem(HAND_KEY); } catch {}
   session = null;
+  uiPrefs.recent = [];
+  saveUiPrefs();
+  renderHome();
   renderGrid();
 });
 
@@ -185,7 +252,9 @@ $("#btn-reset").addEventListener("click", ()=>{
  *  まだ書いていない字 → ★の少ない字 → のこりをランダム。
  *  同じ字ばかり出ても飽きるので、種類はばらす。 */
 function pickChars(){
-  const pool = SETS[curKana][curSet].filter(Boolean);
+  // だくおん・ちいさいじ は「はっくつれんしゅう」で親と一緒にやるもの。
+  // ミッションは きほん(清音)46字だけ＝ホームのつまみが1つで済む
+  const pool = SETS[curKana].seion.filter(Boolean);
   const fresh = pool.filter(c => !got(c));
   const weak  = pool.filter(c =>  got(c) && starsOf(bestOf(c) || 1) < 3);
   const rest  = pool.filter(c =>  got(c) && starsOf(bestOf(c) || 1) >= 3);
@@ -199,11 +268,9 @@ function refreshStart(){
   $("#start-main").innerHTML = held
     ? `つづきから <b>→</b>`
     : `たんけんに でる！ <b>→</b>`;
-  const kanaLabel = curKana === "kata" ? "カタカナ" : "ひらがな";
-  const setLabel = { seion:"きほん", dakuon:"だくおん", small:"ちいさいじ" }[curSet];
   $("#start-sub").textContent = held
     ? `${session.i + 1}もじめの とちゅうから`
-    : `${kanaLabel}・${setLabel}を ${SET}もじ かくと ホネが 1こ！`;
+    : `${KANA_LABEL_JA[curKana]}を ${SET}もじ かくと ホネが 1こ！`;
   $("#btn-restart").classList.toggle("is-hidden", !held);
 }
 
@@ -222,14 +289,16 @@ function startSession(){
   openChar(chars[0]);
 }
 
-/** 文字表から始める通常練習。選んだ字から表の順に、各字3回ずつ自動で進む。 */
+/** はっくつれんしゅう。**えらんだ字だけを3回**書いて終わり。
+ *  以前は表の順に次の字へ流れていたが、「ぬを繰り返したい」に一度も応えられておらず、
+ *  しかも46字を無限に回って終わりが無かった。 */
 function startPractice(ch){
-  const list = SETS[curKana][curSet].filter(Boolean);
-  const at = list.indexOf(ch);
-  if (at < 0) return;
-  const chars = [...list.slice(at), ...list.slice(0, at)];
-  session = { mode: "practice", chars, i: 0, rep: 0, attempts: {}, kana: curKana, set: curSet };
-  openChar(chars[0]);
+  if (!KANA[ch]) return;
+  pickedChar = ch;
+  pushRecent(ch);
+  renderRecent();     // なぞる画面へ行く前に書きかえておく（戻ったときに古いままにならない）
+  session = { mode: "practice", chars: [ch], i: 0, rep: 0, attempts: {}, kana: curKana, set: curSet };
+  openChar(ch);
 }
 $("#btn-start").addEventListener("click", ()=>{
   sfx.unlock(); sfx.pop();
@@ -249,12 +318,11 @@ function renderSess(){
   el.sess.classList.add("is-on");
   const left = REPS - session.rep;
   if (session.mode === "practice"){
-    const next = session.chars[(session.i + 1) % session.chars.length];
     el.sess.dataset.mode = "practice";
     el.sess.innerHTML =
-      `<span class="sess-label">れんしゅう ${session.rep + 1}/${REPS}</span>` +
+      `<span class="sess-label">「${session.chars[0]}」の れんしゅう</span>` +
       `<span class="dots" aria-label="${session.rep}/${REPS}かい"><b>${"●".repeat(session.rep)}</b>${"○".repeat(REPS - session.rep)}</span>` +
-      `<span class="sess-rep">あと ${left}かい <small>つぎは ${next}</small></span>`;
+      `<span class="sess-rep">あと ${left}かい <small>3かいで おわり</small></span>`;
     return;
   }
   el.sess.dataset.mode = "mission";
@@ -296,9 +364,12 @@ window.addEventListener("orientationchange", ()=> setTimeout(fit, 250));
 // やめるのではなく「とめておく」。ホームから続きに戻れる。
 $("#btn-back").addEventListener("click", ()=>{
   sfx.pop();
+  const wasPractice = session && session.mode === "practice";
   if (session && session.mode === "mission") session.paused = true;
   else session = null;
-  hidePraise(); show(el.home); renderGrid();
+  hidePraise();
+  if (wasPractice){ show(el.train); renderGrid(); }
+  else { show(el.home); renderHome(); }
 });
 $("#btn-say").addEventListener("click", ()=>{ sfx.unlock(); say(curChar, "c:" + curChar); });
 $("#btn-demo").addEventListener("click", ()=>{ sfx.unlock(); hidePraise(); tracer.demo(); });
@@ -361,13 +432,36 @@ function advance(){
   if (session.rep < REPS){ renderSess(); tracer.reset(); return; }
   session.rep = 0;
   if (session.mode === "practice"){
-    session.i = (session.i + 1) % session.chars.length;
-    openChar(session.chars[session.i]);
+    finishPractice();
     return;
   }
   session.i += 1;
   if (session.i < session.chars.length){ openChar(session.chars[session.i]); return; }
   finishSession();
+}
+
+/** はっくつれんしゅうの終わり。ホネは出さない（ミッションの「15回で1個」を崩さない）。
+ *  出すのは★と、自分で書いた3枚。 */
+function finishPractice(){
+  const ch = session.chars[0];
+  const samples = (session.attempts[ch] || []).slice(-REPS)
+    .map(a => ({ ch, score: a.score || 0, strokes: a.strokes || [] }));
+  session = null;
+  renderSess();
+  queueReward({
+    kind: "practice",
+    kicker: "はっくつれんしゅう",
+    title: `「${ch}」を ${REPS}かい なぞれた！`,
+    face: "ny_good",
+    handwriting: samples,
+    achievements: [`${starStr(ch) || "★"} に なった！`],
+    sub: "ホネは でないけれど、うまく なっているよ",
+    button: "れんしゅうに もどる",
+    go: "train",
+    speakId: "p:2",
+    speak: `${REPS}かい なぞれたね`
+  });
+  setTimeout(flushRewards, 500);
 }
 
 function finishSession(){
@@ -744,7 +838,7 @@ tracer.on.reject = (res)=>{
 tracer.on.charDone = (avg)=>{
   sfx.charDone();
   const ch  = curChar;
-  if (session && session.mode === "mission"){
+  if (session){
     if (!session.attempts[ch]) session.attempts[ch] = [];
     session.attempts[ch].push({ score: avg, strokes: tracer.snapshot() || [] });
   }
@@ -1009,9 +1103,10 @@ $("#reward-ok").addEventListener("click", ()=>{
   sfx.pop();
   el.reward.classList.remove("is-on");
   if (rewardQueue.length) setTimeout(flushRewards, 350);
+  else if (currentReward && currentReward.go === "train") { show(el.train); renderGrid(); }
   else if (currentReward && currentReward.go === "cert") openCert();
   else if (currentReward && currentReward.go === "dig") { show(el.digScr); renderDig(); }
-  else { show(el.home); renderGrid(); }
+  else { show(el.home); renderHome(); }
 });
 
 /* ================= ほめ表示 ================= */
@@ -1094,6 +1189,7 @@ if (splash){
 
 document.addEventListener("pointerdown", ()=>sfx.unlock(), { once:true });
 document.addEventListener("gesturestart", e=>e.preventDefault());
+renderHome();
 renderGrid();
 
 const params = new URLSearchParams(location.search);
@@ -1126,9 +1222,12 @@ window.__nazorin = {
   get session(){ return session; },
   rewards: ()=>({ queued: rewardQueue.length, open: el.reward.classList.contains("is-on") }),
   rewardLog,
+  renderHome, pickTrainChar,
+  get picked(){ return pickedChar; },
   setKana(k){
     curKana = k;
     saveUiPrefs();
+    renderHome();
     renderGrid();
   },
   setCategory(s){
