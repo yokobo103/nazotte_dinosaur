@@ -129,9 +129,19 @@ export function partName(dino, part){
   return (dino.part && dino.part[part]) || PART_LABEL[part];
 }
 
-/** 獲得したときのことば。最初の骨から恐竜名を伝える。 */
+/** 恐竜の番号（01〜）。ずかんでは、そろう前から この番号の枠が並んでいる。
+ *  名前は隠れていても「6体いて、いま何番が埋まっているか」は見える。 */
+export function dinoNo(dino){
+  return DINOS.findIndex(d => d.id === dino.id) + 1;
+}
+export const noLabel = (dino)=> String(dinoNo(dino)).padStart(2, "0");
+
+/** 獲得したときのことば。**正体は言わない**（2026-09-02）。
+ *  5こそろった瞬間にはじめて名前が出る。
+ *  特注の呼び名（せなかの いた／ハンマーの しっぽ／おやゆびの トゲ）は隠さない —
+ *  そこがヒントになって、当てる楽しみが出る。 */
 export function foundText(dino, part){
-  return `${dino.name}の ${partName(dino, part)}を みつけた！`;
+  return `なにかの ${partName(dino, part)}を みつけた！`;
 }
 
 /* ================= 進みぐあいの保存 ================= */
@@ -180,16 +190,27 @@ export const TOTAL_BONES = () => DINOS.length * ALL_PARTS.length;
 
 /** つぎに出る骨を1つ決める。
  *  まだ持っていない（恐竜×部位）からだけ引く＝ダブりが出ない。
- *  あたまは、その恐竜の残り4つがそろうまで候補に入れない。 */
+ *  あたまは、その恐竜の残り4つがそろうまで候補に入れない＝正体が分かるのは必ず最後。
+ *
+ *  **そろいかけを重く引く**（2026-09-02）。均等に引くと6体へバラけて、
+ *  1体目が完成するのが20個目のホネ（＝20セット＝300回なぞる）になる。2000回まわして実測した。
+ *  名前を隠す作りにすると、その20セットのあいだ ずっと ???? のままになってしまう。
+ *  重みを (持っている数+1)^2 にすると 1体目が10個目・同時に掘りかけは平均2.7体。
+ *  「1体ずつ掘る」ではない（宣言もしないし、複数が並行して埋まる）。 */
+const WEIGHT = (n)=> (n + 1) ** 2;
+
 export function drawBone(dig, rand = Math.random){
   const pool = [];
   for (const dino of DINOS){
     const got = gotParts(dig, dino);
-    for (const part of PARTS) if (!got.includes(part)) pool.push({ dino, part });
-    if (!got.includes(HEAD) && PARTS.every(p => got.includes(p))) pool.push({ dino, part: HEAD });
+    const w = WEIGHT(got.length);
+    for (const part of PARTS) if (!got.includes(part)) pool.push({ dino, part, w });
+    if (!got.includes(HEAD) && PARTS.every(p => got.includes(p))) pool.push({ dino, part: HEAD, w });
   }
   if (!pool.length) return null;
-  return pool[Math.floor(rand() * pool.length)];
+  let r = rand() * pool.reduce((sum, x) => sum + x.w, 0);
+  for (const x of pool){ r -= x.w; if (r <= 0) return x; }
+  return pool[pool.length - 1];
 }
 
 /** 骨を1つ入れる。恐竜がそろったら complete:true */

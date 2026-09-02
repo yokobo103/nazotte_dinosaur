@@ -1,6 +1,6 @@
 // 自動生成。手で編集しない（作り直し: node tools/build_sw.mjs）
 // 電波が無くても開けるように、アプリ一式を先に取っておく。
-const VERSION = "b9ed13835f";
+const VERSION = "58af8a011b";
 const CACHE = "nazorin-" + VERSION;
 
 const FILES = [

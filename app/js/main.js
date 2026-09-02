@@ -550,7 +550,7 @@ function finishSession(){
       button: bone.complete ? "ぜんしんを みる →" : "ずかんを みる →",
       go: "dig",
       speak: B.foundText(bone.dino, bone.part),
-      speakId: `f:${bone.dino.id}:${bone.part}`
+      speakId: `f:${B.partName(bone.dino, bone.part)}`   // 正体は言わない。部位の呼び名だけ
     });
     if (isAllDug() && !dig.certDay){
       dig.certDay = todayISO();
@@ -603,12 +603,18 @@ function slotEl(dino, part, has){
     q.className = "slot-q"; q.textContent = "？";
     slot.appendChild(q);
   }
+  const full = B.isComplete(dig, dino);
   const cap = document.createElement("span");
   cap.className = "slot-label";
-  cap.textContent = has ? B.partName(dino, part) : B.PART_LABEL[part];   // 特別な名前は取ってから
+  if (has && !full){
+    // そろうまでは正体を出さない。特注の呼び名だけは残す＝これがヒントになる
+    cap.innerHTML = `<small>なにかの</small>${B.partName(dino, part)}`;
+  } else {
+    cap.textContent = has ? B.partName(dino, part) : B.PART_LABEL[part];
+  }
   slot.appendChild(cap);
   slot.setAttribute("aria-label",
-    has ? `${dino.name}の ${B.partName(dino, part)}。ほりだした きろくを みる`
+    has ? `${full ? dino.name : "なにか"}の ${B.partName(dino, part)}。ほりだした きろくを みる`
         : `${B.PART_LABEL[part]}は まだ みつかっていない`);
   slot.addEventListener("click", ()=>{ sfx.unlock(); sfx.pop(); openPartSheet(dino, part, has); });
   return slot;
@@ -625,7 +631,9 @@ function openPartSheet(dino, part, has){
   const hand = $("#part-hand");
   art.innerHTML = ""; hand.innerHTML = "";
 
-  $("#part-dino").textContent = has ? dino.name : "";
+  // そろうまでは正体を出さない（ずかんのカードと同じ扱い）
+  const dinoFull = B.isComplete(dig, dino);
+  $("#part-dino").textContent = has ? (dinoFull ? dino.name : `${B.noLabel(dino)}　？？？？`) : "";
   $("#part-title").textContent = has ? B.partName(dino, part) : `${B.PART_LABEL[part]}は まだ`;
 
   if (has){
@@ -695,10 +703,12 @@ function dinoCard(dino){
   const card = document.createElement("section");
   card.className = "page dino" + (full ? " full" : gotP.length ? "" : " untouched");
 
+  // 番号は最初から出す。名前だけ隠す＝「6体いて、いま何番が埋まっているか」は見える
   const head = document.createElement("div");
   head.className = "page-head";
   head.innerHTML =
-    `<h3 class="page-title">${gotP.length ? dino.name : "？"}</h3>` +
+    `<span class="dino-no">${B.noLabel(dino)}</span>` +
+    `<h3 class="page-title${full ? "" : " unknown"}">${full ? dino.name : "？？？？"}</h3>` +
     (left === 1 ? `<span class="ribbon">あと 1こ！</span>` :
      full        ? `<span class="ribbon">そろった 🎉</span>` : "") +
     `<span class="count">${gotP.length}/${B.ALL_PARTS.length}</span>`;
@@ -727,6 +737,12 @@ function dinoCard(dino){
     g.className = "dig-grid";
     for (const part of SLOT_ORDER) g.appendChild(slotEl(dino, part, gotP.includes(part)));
     card.appendChild(g);
+    const left2 = document.createElement("p");
+    left2.className = "dino-left";
+    left2.textContent = left === 1
+      ? "あと 1こで しょうたいが わかる！"
+      : `あと ${left}こで しょうたいが わかる！`;
+    card.appendChild(left2);
   }
   return card;
 }
@@ -797,16 +813,13 @@ function certCard(){
 function renderDig(){
   el.digWrap.innerHTML = "";
   // そろった → 掘りかけ → 手つかず。手つかずが上に来ると、進んでいるものが埋もれる
-  const done  = B.DINOS.filter(d => B.isComplete(dig, d));
-  const going = B.DINOS.filter(d => !B.isComplete(dig, d) && B.gotParts(dig, d).length > 0);
-  const yet   = B.DINOS.filter(d => !B.isComplete(dig, d) && B.gotParts(dig, d).length === 0);
-  const rest  = [...going, ...yet];
+  // 番号順にならべる。番号の枠が最初から6つ見えていることが、この画面の背骨
   if (isAllDug()) el.digWrap.appendChild(certCard());
-  for (const d of [...done, ...rest]) el.digWrap.appendChild(dinoCard(d));
+  for (const d of B.DINOS) el.digWrap.appendChild(dinoCard(d));
   el.digTotal.textContent = `${B.boneCount(dig)} / ${B.TOTAL_BONES()}`;
   $(".dig-intro strong").innerHTML = isAllDug()
     ? "ぜんぶの ホネが そろった！<br>きみは さいこうの はっくつたい！"
-    : "ホネを 5こ あつめると<br>ぜんしんこっかくが かんせい！";
+    : "ホネを 5こ あつめると<br>しょうたいが わかる！";
   el.digNote.textContent = allPlaceholder() ? "※ ホネの えは まだ 仮のものです" : "";
 }
 

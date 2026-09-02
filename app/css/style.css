@@ -262,3 +262,10 @@ button{font:inherit}
 /* しょうじょうの下。絵にはもう「YOKOBO AI LAB」の看板が描いてあるので、字は小さく */
 .cert-lab{margin:0;color:var(--sub);font-size:10px;font-weight:800;text-align:center}
 .cert-lab a{color:var(--teal-dark)}
+
+/* ===== ずかん：番号つきの枠。名前はそろうまで隠す（2026-09-02） ===== */
+.dino-no{flex:0 0 auto;display:flex;align-items:center;justify-content:center;min-width:34px;height:28px;padding:0 7px;border-radius:9px;background:#e3d3b4;color:#6b5232;font-size:14px;font-weight:900;letter-spacing:.04em}
+.page.dino.full .dino-no{background:var(--gold);color:#5a3f12}
+.page-title.unknown{color:#b09a76;letter-spacing:.12em}
+.dino-left{margin:7px 2px 0;padding:6px 8px;border-radius:10px;background:rgba(255,255,255,.55);color:var(--soil);font-size:10px;font-weight:800;text-align:center}
+.slot-label small{display:block;color:#a9906d;font-size:7px;font-weight:800;line-height:1.1}

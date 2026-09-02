@@ -509,27 +509,38 @@ const cards = await page.evaluate(() => [...document.querySelectorAll("#dig .pag
   name:  c.querySelector(".page-title").textContent,
   count: c.querySelector(".count").textContent,
   ribbon:(c.querySelector(".ribbon") || {}).textContent || "",
+  no:    c.querySelector(".dino-no")?.textContent || "",
   slots: c.querySelectorAll(".slot").length,
   has:   c.querySelectorAll(".slot.has").length,
   art:   !!c.querySelector(".dino-full")
 })));
 check("6体ぶんならぶ", cards.length === 6, cards.map(c => `${c.name}${c.count}`).join(" "));
+// 並びは番号順なので「いちばん上がそろった1体」ではない。数と中身で見る
 check("そろった1体だけ 全体像が見える",
-  cards.filter(c => c.art).length === 1 && cards[0].art === true,
-  cards.filter(c => c.art).map(c => c.name).join(",") || "なし");
+  cards.filter(c => c.art).length === 1 &&
+  cards.filter(c => c.art)[0].count === "5/5",
+  cards.filter(c => c.art).map(c => `${c.no} ${c.name}`).join(",") || "なし");
 check("完成カードにも集めた5つのパーツが小さく残る",
   await page.$eval("#dig .page.dino.full", c =>
     c.querySelectorAll(".complete-part").length === 5 &&
     c.querySelector(".complete-parts-title").textContent.includes("5つ")));
-check("そろった恐竜が いちばん上に来る", cards[0].name === "ステゴサウルス", cards[0].name);
-check("最初の骨から 恐竜の名前がわかる",
-  cards.filter(c => c.count !== "0/5").every(c => c.name !== "？" && c.name !== "なぞの きょうりゅう"),
-  cards.map(c => `${c.name}${c.count}`).join(" "));
+// 番号は最初から見えていて、名前だけ そろうまで隠す（2026-09-02に方針を変えた）
+check("01〜06 の番号が最初から見えている",
+  cards.map(c => c.no).join(",") === "01,02,03,04,05,06", cards.map(c => c.no).join(","));
+check("番号順にならぶ（そろった順ではない）",
+  cards[0].no === "01" && cards[5].no === "06");
+check("そろうまで 名前は出ない",
+  cards.filter(c => c.count !== "5/5").every(c => c.name === "？？？？") &&
+  cards.filter(c => c.count === "5/5").every(c => c.name !== "？？？？"),
+  cards.map(c => `${c.no}:${c.name}${c.count}`).join(" "));
+check("掘りかけには「あと n こで しょうたいが わかる」が出る",
+  await page.$eval("#dig", d => [...d.querySelectorAll(".dino-left")]
+    .some(e => /あと \d+こで しょうたいが わかる/.test(e.textContent))));
 check("あと1この恐竜に しるしが出る",
   cards.some(c => c.ribbon.includes("あと 1こ") && c.count === "4/5"),
   cards.map(c => c.ribbon).filter(Boolean).join(" / "));
-check("手つかずの恐竜は 名前もマスも出さない",
-  cards.some(c => c.name === "？" && c.count === "0/5" && c.slots === 0));
+check("手つかずの恐竜は マスも出さない",
+  cards.some(c => c.name === "？？？？" && c.count === "0/5" && c.slots === 0));
 check("途中の恐竜は 取ったマスだけ うまっている",
   cards.filter(c => c.slots > 0).every(c => c.has === Number(c.count.split("/")[0])),
   cards.filter(c => c.slots > 0).map(c => `${c.name} ${c.has}/${c.slots}`).join(" "));
@@ -614,9 +625,34 @@ const rule = await page.evaluate(() => {
 check("30こで6体そろう", rule.n === 30 && rule.done === 6, `${rule.n}こ / ${rule.done}体`);
 check("ダブりが出ない", rule.dup.length === 0, rule.dup.join(",") || "なし");
 check("あたまは その恐竜の残り4つがそろうまで出ない", rule.headAlwaysLast === true);
-check("いろんな恐竜が同時に進む（1体ずつではない）", rule.spread >= 3,
+check("いろんな恐竜が同時に進む（1体ずつではない）", rule.spread >= 2,
   `はじめの10こが ${rule.spread}体にまたがる`);
 check("ぜんぶ掘ったら それ以上は出ない", rule.after === null, String(rule.after));
+
+// 名前をそろうまで隠す作りなので、1体目が遅すぎると ずっと ???? のままになる。
+// 均等に引くと1体目は20個目だった（実測）。そろいかけを重く引いて10個目まで縮めてある。
+const pace = await page.evaluate(() => {
+  const B = window.__nazorin.bones;
+  const first = [], spread = [];
+  for (let i = 0; i < 600; i++){
+    const d = { slots: Object.fromEntries(B.DINOS.map(x => [x.id, []])), done: [] };
+    let got = 0;
+    for (let n = 1; n <= 30; n++){
+      const pick = B.drawBone(d);
+      const r = B.addBone(d, pick);
+      if (n === 5) spread.push(B.DINOS.filter(x => B.gotParts(d, x).length > 0).length);
+      if (r && r.complete && !got){ got = n; }
+    }
+    first.push(got);
+  }
+  const med = (a)=> [...a].sort((x,y)=>x-y)[Math.floor(a.length/2)];
+  return { first: med(first), worst: Math.max(...first),
+           spread: +(spread.reduce((s,x)=>s+x,0)/spread.length).toFixed(1) };
+});
+check("1体目の正体が 10セットあたりで わかる", pace.first <= 13 && pace.worst <= 22,
+  `中央 ${pace.first}個目 / いちばん遅くて ${pace.worst}個目`);
+check("それでも 複数の恐竜が同時に埋まっていく", pace.spread >= 2.2,
+  `5個目の時点で 平均${pace.spread}体が掘りかけ`);
 
 /* --- マスを押したら きろくが出る（5さいが押していた） --- */
 await page.evaluate(() => {
@@ -651,6 +687,9 @@ const sheet = await page.evaluate(() => ({
 check("取れたマスを押すと きろくが出る",
   sheet.open && sheet.art && /ほりだした/.test(sheet.day) && sheet.chars === 5,
   `${sheet.title} / ${sheet.day} / もじ${sheet.chars}`);
+check("そろっていない恐竜の きろくでも 名前は出ない",
+  /？？？？/.test(await page.$eval("#part-dino", e => e.textContent)),
+  await page.$eval("#part-dino", e => e.textContent));
 check("ほりだした日が 子ども向けに出る", /8がつ 30にち/.test(sheet.day), sheet.day);
 await shot(page, "16_part_record.png");
 await page.click("#part-close"); await sleep(250);
@@ -678,8 +717,8 @@ const order = await page.evaluate(() => [...document.querySelectorAll("#dig .pag
   n: c.querySelector(".page-title").textContent,
   c: c.querySelector(".count").textContent
 })));
-check("そろった→掘りかけ→手つかず の順にならぶ",
-  order[0].c === "5/5" && order[1].c === "2/5" && order.slice(2).every(x => x.c === "0/5"),
+check("並びは番号順（そろっても場所が動かない）",
+  order[1].c === "5/5" && order[0].c === "2/5",
   order.map(o => o.c).join(" "));
 
 /* ================= 7. データ ================= */
@@ -754,15 +793,18 @@ check("生きていた年代に漢字やカタカナが残っていない",
 
 await page.goto(URL.replace(/\/?$/, "/") + "triceratops-complete.html", { waitUntil: "networkidle0" });
 await passSplash(page);
-const triDemo = await page.evaluate(() => ({
-  path: location.pathname,
-  demo: new URLSearchParams(location.search).get("demo"),
-  digOn: document.querySelector("#screen-dig").classList.contains("is-on"),
-  name: document.querySelector("#dig .page-title")?.textContent,
-  count: document.querySelector("#dig .count")?.textContent,
-  full: !!document.querySelector("#dig .dino-full"),
-  total: document.querySelector("#dig-total")?.textContent
-}));
+const triDemo = await page.evaluate(() => {
+  const card = [...document.querySelectorAll("#dig .page.dino")].find(c => c.querySelector(".dino-full"));
+  return {
+    path: location.pathname,
+    demo: new URLSearchParams(location.search).get("demo"),
+    digOn: document.querySelector("#screen-dig").classList.contains("is-on"),
+    name: card?.querySelector(".page-title")?.textContent,
+    count: card?.querySelector(".count")?.textContent,
+    full: !!card,
+    total: document.querySelector("#dig-total")?.textContent
+  };
+});
 check("トリケラトプス完成状態の専用ページが開く",
   triDemo.demo === "triceratops-complete" && triDemo.digOn && triDemo.name === "トリケラトプス" &&
   triDemo.count === "5/5" && triDemo.full && /^\s*5\s*\/\s*30\s*$/.test(triDemo.total),
@@ -778,14 +820,18 @@ for (const [id, name] of [
 ]) {
   await page.goto(URL.replace(/\/?$/, "/") + `${id}-complete.html`, { waitUntil:"networkidle0" });
   await passSplash(page);
-  addedDinoDemos.push(await page.evaluate(([expectedId, expectedName]) => ({
-    id: expectedId,
-    name: document.querySelector("#dig .page-title")?.textContent,
-    expectedName,
-    count: document.querySelector("#dig .count")?.textContent,
-    full: document.querySelector("#dig .dino-full img")?.getAttribute("src") || "",
-    parts: [...document.querySelectorAll("#dig .complete-part img")].map(img => img.getAttribute("src"))
-  }), [id, name]));
+  addedDinoDemos.push(await page.evaluate(([expectedId, expectedName]) => {
+    // 番号順にならぶので、先頭ではなく「そろっているカード」を探す
+    const card = [...document.querySelectorAll("#dig .page.dino")].find(c => c.querySelector(".dino-full"));
+    return {
+      id: expectedId,
+      name: card?.querySelector(".page-title")?.textContent,
+      expectedName,
+      count: card?.querySelector(".count")?.textContent,
+      full: card?.querySelector(".dino-full img")?.getAttribute("src") || "",
+      parts: [...(card?.querySelectorAll(".complete-part img") || [])].map(img => img.getAttribute("src"))
+    };
+  }, [id, name]));
 }
 check("追加5体の完成確認ページが開く",
   addedDinoDemos.every(d => d.name === d.expectedName && d.count === "5/5" &&
@@ -1016,7 +1062,7 @@ check("まっすぐ引くだけで通るのは もともと直線の画だけ",
           for (const ch of set.flat()) if (ch) chars.push(ch);
       const rewards = [];
       for (const d of B.DINOS){
-        for (const p2 of B.ALL_PARTS) rewards.push(`f:${d.id}:${p2}`);
+        for (const p2 of B.ALL_PARTS) rewards.push(`f:${B.partName(d, p2)}`);
         rewards.push(`r:${d.id}`);
       }
       return { chars, rewards };

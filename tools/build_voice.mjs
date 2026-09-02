@@ -58,11 +58,13 @@ add("w:off",     "せんの うえを なぞろう");
 add("w:shape",   "かたちが ちがうみたい");
 add("w:again",   "もういちど");
 
-// 4. ごほうび。ホネは「恐竜×部位」の30通りをそのまま焼く
-//    （名前と部位を別々に焼いて繋ぐと、切れ切れに聞こえる）
+// 4. ごほうび。
+//    ホネが出たときは **正体を言わない**（2026-09-02）ので、恐竜×部位の30通りではなく
+//    部位の呼び名ごとの8通りで足りる。特注の呼び名（せなかの いた など）はヒントとして残す。
+//    完成した瞬間だけ名前を出す。
 add("s:set", "5もじ かけたね");
 for (const d of B.DINOS){
-  for (const part of B.ALL_PARTS) add(`f:${d.id}:${part}`, B.foundText(d, part));
+  for (const part of B.ALL_PARTS) add(`f:${B.partName(d, part)}`, B.foundText(d, part));
   add(`r:${d.id}`, `${d.name}の ホネが そろった`);
 }
 add("s:complete", "ずかん コンプリート");
