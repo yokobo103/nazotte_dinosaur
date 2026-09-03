@@ -76,7 +76,7 @@ export function pop(){
    VOICEVOX:春歌ナナ（CM動画パイプラインでニャビットに使っている声）で焼いた1本を、
    位置を指定して鳴らす。<audio> を200個持つと iOS で重いので、
    1つのバッファをデコードして region 再生にしている。
-   ファイルが無い・その文が焼かれていないときは false を返す＝呼ぶ側が端末の合成音声に落ちる。 */
+   ファイルが無い・その文が焼かれていないときは false を返す。呼ぶ側は機械音声へ落とさず無音にする。 */
 let voice = null, voiceLoading = null;
 
 export function loadVoice(){

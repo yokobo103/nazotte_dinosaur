@@ -666,8 +666,9 @@ function openPartSheet(dino, part, has){
     $("#part-day").textContent = "";
     $("#part-note").textContent = "もじを なぞって さがそう！";
   }
+  // 図鑑のマスは記録を見る場所。タッチだけで名前を読み上げると、
+  // 未完成の恐竜の正体が先に分かってしまうので、自動読み上げはしない。
   el.sheet.classList.add("is-on");
-  if (has) say(`${dino.name}の ${B.partName(dino, part)}`);
 }
 
 function closePartSheet(){ el.sheet.classList.remove("is-on"); }
@@ -885,7 +886,7 @@ tracer.on.charDone = (avg)=>{
     confetti();
     // ★の意味を耳でも伝える。字の読みは openChar でもう鳴らしているので、
     // ここで重ねると「あ、ありの あ」が2回続いてくどくなる
-    if (!sfx.speak(`p:${st}`)) say(ch);
+    if (!sfx.speak(`p:${st}`)) say(ch, `c:${ch}`);
   }, 160);
 
   // れんしゅう中はひとりでに進む（子どもに「つぎ」を押させ続けない）
@@ -1152,16 +1153,13 @@ function flash(text, ms = 620, spot = "top", big = false){
 function hidePraise(){ el.praise.classList.remove("is-on"); }
 
 /* ================= よみあげ ================= */
-function say(text, id){
-  // 焼いた声（VOICEVOX:春歌ナナ）があればそれで鳴らす。無ければ端末の合成音声
-  if (id && sfx.speak(id)) return;
-  if (!text || !("speechSynthesis" in window)) return;
-  try {
-    speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(WORDS[text] ? readingOf(text) : text);
-    u.lang = "ja-JP"; u.rate = 0.85; u.pitch = 1.15;
-    speechSynthesis.speak(u);
-  } catch {}
+async function say(_text, id){
+  // 読み上げは焼いた声だけを使う。読み込み中なら待ってから再試行し、
+  // 失敗しても端末の機械音声へは落とさない。
+  if (!id) return false;
+  if (sfx.speak(id)) return true;
+  try { await sfx.loadVoice(); } catch {}
+  return sfx.speak(id);
 }
 
 /* ================= 紙ふぶき ================= */

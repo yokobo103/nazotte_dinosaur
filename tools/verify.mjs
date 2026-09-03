@@ -1092,6 +1092,11 @@ check("まっすぐ引くだけで通るのは もともと直線の画だけ",
     check("ほめことば・やりなおしの理由・ごほうびの声もそろっている",
       missFixed.length === 0, missFixed.length ? missFixed.slice(0,5).join(" ") : `${fixed.length}本`);
 
+    const mainSource = fs.readFileSync(path.join(APP2, "js", "main.js"), "utf8");
+    check("端末の機械音声フォールバックが残っていない",
+      !mainSource.includes("speechSynthesis") && !mainSource.includes("SpeechSynthesisUtterance"),
+      "焼いた声が無い場合も機械音声へ落とさない");
+
     // 「を」「づ」のように ことばの無い字は1拍しかなく、それでも0.29秒ある。
     // 0.15秒を切るのは焼けていないとき
     const short = Object.entries(idx.clips).filter(([, c]) => c[1] < 0.15);
