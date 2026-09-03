@@ -8,13 +8,50 @@
     "gameplaySignal": "collect",
     "anchor": "image-center"
   },
+  "referenceImages": [
+    {
+      "asset": "anky_body.webp",
+      "source": "Natural History Museum, London",
+      "title": "Ankylosaurs: The dinosaurs with built-in armour",
+      "url": "https://www.nhm.ac.uk/discover/ankylosaurs-the-dinosaurs-with-built-in-armour.html",
+      "imageInfo": "アンキロサウルス類の復元図と装甲の解説を参照。幅広い胴と、皮膚に埋め込まれた骨質の装甲（オステオダーム）が特徴として示されている。",
+      "reflected": "低く幅広い胴、背中を覆う低い装甲骨の列、肩まわりの小さな突起"
+    },
+    {
+      "asset": "stego_tail.webp",
+      "source": "Natural History Museum, London",
+      "title": "Secrets of the Stegosaurus: the work of a Museum scientist",
+      "url": "https://www.nhm.ac.uk/discover/revealing-stegosaurus-secrets.html",
+      "imageInfo": "ステゴサウルス標本の尾の画像と解説を参照。尾椎が連なり、尾端に4本の長い尾のとげがある構造を反映した。",
+      "reflected": "太い尾の付け根、先細る尾椎列、尾端の4本のとげ（thagomizer）"
+    },
+    {
+      "asset": "stego_tail.webp",
+      "source": "Smithsonian Magazine",
+      "title": "Watch Out For That Thagomizer!",
+      "url": "https://www.smithsonianmag.com/science-nature/watch-out-for-that-thagomizer-98891562/",
+      "imageInfo": "ステゴサウルスの尾端にある4本の長いとげ（thagomizer）の解説・図を参照した。",
+      "reflected": "4本を数えられる大きさと、尾端で上下に分かれる配置"
+    },
+    {
+      "asset": "stego_tail.webp",
+      "source": "ユーザー提供画像（写真1.jpg）",
+      "file": "写真1.jpg",
+      "imageInfo": "添付された横から見たステゴサウルス尾骨格の写真を、今回の形状の直接参考にした。",
+      "reflected": "左側の太い尾の付け根、右へ細くなる長い尾椎列、終盤に立ち上がる2本の目立つとげと近接した2本のとげ"
+    }
+  ],
+  "styleReferences": {
+    "assets": ["stego_body.webp", "quad_body.webp", "quad_tail.webp"],
+    "note": "既存の本番用骨アセットを、色・輪郭・線の太さ・子ども向けのやわらかい絵柄の参照に使用。"
+  },
   "sharedSets": {
     "quad": ["quad_body.webp", "quad_fore.webp", "quad_hind.webp", "quad_tail.webp"],
     "biped": ["biped_body.webp", "biped_fore.webp", "biped_hind.webp", "biped_tail.webp"]
   },
   "dinosaurSpecific": {
-    "stegosaurus": ["stego_body.webp", "head_stegosaurus.webp", "full_stegosaurus.webp"],
-    "ankylosaurus": ["anky_tail.webp", "head_ankylosaurus.webp", "full_ankylosaurus.webp"],
+    "stegosaurus": ["stego_body.webp", "stego_tail.webp", "head_stegosaurus.webp", "full_stegosaurus.webp"],
+    "ankylosaurus": ["anky_body.webp", "anky_tail.webp", "head_ankylosaurus.webp", "full_ankylosaurus.webp"],
     "iguanodon": ["iguano_fore.webp", "head_iguanodon.webp", "full_iguanodon.webp"],
     "brachiosaurus": ["head_brachiosaurus.webp", "full_brachiosaurus.webp"],
     "tyrannosaurus": ["head_tyrannosaurus.webp", "full_tyrannosaurus.webp"]

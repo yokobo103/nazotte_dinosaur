@@ -785,8 +785,19 @@ const webpAssets = await page.evaluate(async () => {
   return { files, failed: status.filter(x => !x.ok).map(x => x.f) };
 });
 check("配信用の骨画像は WebPでそろっている",
-  webpAssets.files.length === 23 && webpAssets.files.every(f => f.endsWith(".webp")) && webpAssets.failed.length === 0,
+  webpAssets.files.length === 25 && webpAssets.files.every(f => f.endsWith(".webp")) && webpAssets.failed.length === 0,
   `${webpAssets.files.length}枚 / 読込失敗:${webpAssets.failed.join(",") || "なし"}`);
+
+const referenceLedger = await page.evaluate(async () => {
+  const m = await fetch("./assets/bones/metadata.json").then(r => r.json());
+  return m.referenceImages || [];
+});
+check("特注骨の参考画像情報が台帳にある",
+  referenceLedger.some(r => r.asset === "anky_body.webp" && r.url.includes("nhm.ac.uk")) &&
+  referenceLedger.some(r => r.asset === "stego_tail.webp" && r.url.includes("nhm.ac.uk") && r.reflected.includes("4本")) &&
+  referenceLedger.some(r => r.asset === "stego_tail.webp" && r.url.includes("smithsonianmag.com")) &&
+  referenceLedger.some(r => r.asset === "stego_tail.webp" && r.source.includes("ユーザー提供画像") && r.file === "写真1.jpg"),
+  JSON.stringify(referenceLedger));
 
 const restorations = await page.evaluate(async () => {
   const B = await import("./js/bones.js");

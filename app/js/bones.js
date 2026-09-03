@@ -51,7 +51,7 @@ export const DINOS = [
   },
   {
     id: "stegosaurus", name: "ステゴサウルス", lineage: "quad",
-    custom: { body: "stego_body" },
+    custom: { body: "stego_body", tail: "stego_tail" },
     part:   { body: "せなかの いた" },
     fact: "せなかの いたで からだの あつさを ちょうせつ していた かも",
     detail: {
@@ -63,7 +63,7 @@ export const DINOS = [
   },
   {
     id: "ankylosaurus", name: "アンキロサウルス", lineage: "quad",
-    custom: { tail: "anky_tail" },
+    custom: { body: "anky_body", tail: "anky_tail" },
     part:   { tail: "ハンマーの しっぽ" },
     fact: "しっぽの さきが ハンマー。てきを たたいて みを まもった",
     detail: {

@@ -105,13 +105,22 @@
 | キー | 中身 | 共通との差 |
 |---|---|---|
 | `stego_body` | ステゴサウルスの背板 | あばらの上に板がズラッと並ぶ |
+| `stego_tail` | ステゴサウルスの尾椎 | 付け根が太く、尾椎が先細る。尾端に4本のとげ（thagomizer） |
+| `anky_body` | アンキロサウルスの胴体 | 幅広く頑丈な胴。背中に低い装甲骨（オステオダーム）が連なる |
 | `anky_tail` | アンキロサウルスのハンマー尾 | 先が「ゴツン」と巨大 |
 | `iguano_fore` | イグアノドンの親指のトゲ | 親指だけ「なんだこれ？」 |
 | `velo_hind` | ヴェロキラプトルのかぎ爪（第2弾） | 大きな鎌形の爪 |
 
-特注は**部位の呼び名そのものを特別にする**（「どう」→「せなかの いた」、
+一部の特注は**部位の呼び名そのものも特別にする**（「どう」→「せなかの いた」、
 「しっぽ」→「ハンマーの しっぽ」、「まえあし」→「おやゆびの トゲ」）。
 普通の部位より嬉しい、という形で価値を出す。
+
+### 今回の特注絵で参照した画像情報
+
+- `anky_body.webp`：Natural History Museum, London「[Ankylosaurs: The dinosaurs with built-in armour](https://www.nhm.ac.uk/discover/ankylosaurs-the-dinosaurs-with-built-in-armour.html)」の復元図・装甲解説を参照。低く幅広い胴と、背中を覆う低い骨質の装甲を反映した。
+- `stego_tail.webp`：Natural History Museum, London「[Secrets of the Stegosaurus: the work of a Museum scientist](https://www.nhm.ac.uk/discover/revealing-stegosaurus-secrets.html)」および Smithsonian Magazine「[Watch Out For That Thagomizer!](https://www.smithsonianmag.com/science-nature/watch-out-for-that-thagomizer-98891562/)」の尾の画像・解説を参照。尾椎列と尾端の4本のとげを反映した。
+- `stego_tail.webp`：今回添付された「写真1.jpg」の横から見た尾骨格写真も直接参照。太い付け根から右へ細くなる尾椎列と、終盤に立ち上がるとげの見え方を反映した。
+- 絵柄の色・輪郭・線の太さは、既存の本番アセット `stego_body.webp` / `quad_body.webp` / `quad_tail.webp` を参照した。
 
 ### あたま（恐竜ごと・首を含める）
 
@@ -158,10 +167,10 @@
 | 種類 | 枚数 |
 |---|---|
 | 四足セット（body / fore / hind / tail） | 4 |
-| 特注（stego_body / anky_tail / iguano_fore） | 3 |
+| 特注（stego_body / stego_tail / anky_body / anky_tail / iguano_fore） | 5 |
 | あたま × 5体 | 5 |
 | 全身骨格 × 5体 | 5 |
-| **計** | **17** |
+| **計** | **19** |
 
 恐竜を1体増やすコストは **あたま1枚＋全身1枚の2枚**（特注を足すなら+1）。
 

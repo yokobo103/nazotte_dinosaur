@@ -20,7 +20,9 @@ export const ART = {
 
   /* --- 特注パーツ（＝正体のヒント。絵柄は共通と同じ、シルエットだけ変える） --- */
   stego_body:  "stego_body.webp",   // 背中の板
-  anky_tail:   "anky_tail.webp",   // ハンマー尾
+  stego_tail:  "stego_tail.webp",   // 太い付け根から先細る尾椎＋4本の尾のとげ
+  anky_body:   "anky_body.webp",    // 幅広く頑丈な胴体＋背中の装甲骨
+  anky_tail:   "anky_tail.webp",    // ハンマー尾
   iguano_fore: "iguano_fore.webp", // 親指のトゲ
   velo_hind:   null,   // かぎ爪（第2弾）
 
