@@ -197,6 +197,17 @@ check("かなの切りかえは たんけんボタンのそば（設定の奥で
 check("設定は小さい", homeShape.gear < 80, `⚙${homeShape.gear}px`);
 check("「さいしょから」はホームに出しっぱなしにしない（せっていの中）",
   homeShape.resetOnHome === false);
+const homeCopy = await page.evaluate(() => ({
+  progress: document.querySelector("#progress").textContent,
+  train: document.querySelector('.home-card[data-go="train"] small').textContent,
+  skull: !!document.querySelector('.home-card[data-go="dig"] .home-dino-icon')
+}));
+check("ホームの進捗が「たんけんした もじ」と分かる",
+  homeCopy.progress.startsWith("🐾") && /たんけんした\s+もじ\s+0 \/ 46/.test(homeCopy.progress), homeCopy.progress);
+check("はっくつれんしゅうの説明が もじをえらぶ内容になっている",
+  homeCopy.train.replace(/\s/g, "") === "もじをえらんで3かいなぞる", homeCopy.train);
+check("はっくつずかんの入口が恐竜の頭骨アイコンになっている",
+  homeCopy.skull);
 await shot(page, "01_home.png");
 
 // ここから先は はっくつれんしゅう ページ

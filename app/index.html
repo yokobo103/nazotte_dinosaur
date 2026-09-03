@@ -54,18 +54,27 @@
 
   <nav class="home-nav">
     <button class="home-card card-dig" data-go="dig">
-      <span class="home-card-icon" aria-hidden="true">🦴</span>
+      <span class="home-card-icon" aria-hidden="true">
+        <svg class="home-dino-icon" viewBox="0 0 88 64" focusable="false">
+          <path class="dino-skull" d="M11 27C12 15 22 7 38 7h22c10 0 17 6 17 15v9c0 5-4 8-10 8H53l-3 12H35l3-12H23c-8 0-13-5-12-12Z"/>
+          <path class="dino-jaw" d="M16 39h51c-3 8-11 13-24 13H31c-8 0-13-4-15-10Z"/>
+          <circle class="dino-eye" cx="56" cy="21" r="4"/>
+          <circle class="dino-nose" cx="70" cy="29" r="2.5"/>
+          <path class="dino-teeth" d="M25 40l3 7 4-7 4 7 4-7 4 7 4-7 4 7 4-7"/>
+          <path class="dino-bone-hole" d="M25 22c4-5 10-7 16-5"/>
+        </svg>
+      </span>
       <b>はっくつずかん</b>
       <small>あつめた ホネを みる</small>
     </button>
     <button class="home-card card-train" data-go="train">
       <span class="home-card-icon" aria-hidden="true">✏️</span>
       <b>はっくつれんしゅう</b>
-      <small>おうちのひとと<br>3かい なぞる</small>
+      <small>もじを えらんで<br>3かい なぞる</small>
     </button>
   </nav>
 
-  <p class="home-stars"><span id="progress"></span></p>
+  <p class="home-stars"><span id="progress" aria-label="たんけんした もじの すすみぐあい"></span></p>
   <p class="credit">もじの かたち: <a href="https://kanjivg.tagaini.net" target="_blank" rel="noopener">KanjiVG</a> (CC BY-SA 3.0)　／　こえ: <span id="voice-credit">VOICEVOX:春歌ナナ</span></p>
 </section>
 
@@ -104,13 +113,13 @@
   </div>
 </section>
 
-<!-- ===== はっくつれんしゅう（親といっしょ。1もじ3かいで終わり） ===== -->
+<!-- ===== はっくつれんしゅう（1もじ3かいで終わり） ===== -->
 <section id="screen-train" class="screen train-screen" aria-labelledby="train-title">
   <header class="topbar train-topbar">
     <button id="btn-train-back" class="mini back" aria-label="もどる">←<small>もどる</small></button>
     <h2 class="page-logo" id="train-title"><img src="assets/chars/logo_training.webp" alt="はっくつれんしゅう"></h2>
   </header>
-  <p class="train-lead">おうちのひとと もじを えらんで <strong>3かい</strong> なぞろう</p>
+  <p class="train-lead">もじを えらんで <strong>3かい</strong> なぞろう</p>
 
   <section class="train-book">
     <div class="seg" id="train-kana">

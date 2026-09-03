@@ -135,9 +135,10 @@ function renderHome(){
   el.homeBones.textContent = bones >= B.TOTAL_BONES()
     ? "ぜんぶの ホネを はっくつしたよ！"
     : `はっくつした ホネ　${bones} / ${B.TOTAL_BONES()}`;
-  // ★は「ミッションで出る きほん46字」に対して数える（表の範囲ごとに変わると意味が読めない）
+  // たんけんした文字は「ミッションで出る きほん46字」に対して数える
+  // （表の範囲ごとに変わると、ホームの進みぐあいの意味が読めない）
   const list = SETS[curKana].seion.filter(Boolean);
-  el.prog.textContent = `⭐ ${list.filter(got).length} / ${list.length}`;
+  el.prog.textContent = `🐾 たんけんした もじ　${list.filter(got).length} / ${list.length}`;
 }
 
 el.kanaPick.addEventListener("click", (e)=>{
@@ -151,7 +152,7 @@ el.kanaPick.addEventListener("click", (e)=>{
 });
 
 /* ================= はっくつれんしゅう（50音表） =================
-   親と一緒に使うページ。字を選んで確かめてから始める（誤タップで始まらない）。
+   字を選んで確かめてから始める（誤タップで始まらない）。
    1もじ3かいで終わり。ホネは出ない ＝ ミッションの「15回で1個」を崩さない。 */
 let pickedChar = null;
 
