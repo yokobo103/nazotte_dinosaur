@@ -200,7 +200,10 @@ check("「さいしょから」はホームに出しっぱなしにしない（�
 const homeCopy = await page.evaluate(() => ({
   progress: document.querySelector("#progress").textContent,
   train: document.querySelector('.home-card[data-go="train"] small').textContent,
-  skull: !!document.querySelector('.home-card[data-go="dig"] .home-dino-icon')
+  skull: (() => {
+    const img = document.querySelector('.home-card[data-go="dig"] .home-dino-icon');
+    return !!img && img.tagName === "IMG" && img.getAttribute("src") === "assets/bones/head_tyrannosaurus.webp";
+  })()
 }));
 check("ホームの進捗が「たんけんした もじ」と分かる",
   homeCopy.progress.startsWith("🐾") && /たんけんした\s+もじ\s+0 \/ 46/.test(homeCopy.progress), homeCopy.progress);

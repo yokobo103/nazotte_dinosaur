@@ -218,14 +218,8 @@ button{font:inherit}
 .home-card:active{transform:translateY(3px);box-shadow:none}
 .home-card b{font-size:16px;line-height:1.25}
 .home-card small{color:var(--sub);font-size:10px;font-weight:700;line-height:1.4}
-.home-card-icon{display:flex;align-items:center;justify-content:center;width:58px;height:38px;font-size:34px;line-height:1}
-.home-dino-icon{display:block;width:58px;height:42px;overflow:visible;filter:drop-shadow(0 2px 0 rgba(91,62,33,.14))}
-.home-dino-icon .dino-skull{fill:#fff7e9;stroke:#8b6a43;stroke-width:2.2;stroke-linejoin:round}
-.home-dino-icon .dino-jaw{fill:#f3dfb9;stroke:#8b6a43;stroke-width:2;stroke-linejoin:round}
-.home-dino-icon .dino-eye{fill:#168f86;stroke:#0e6e68;stroke-width:1.3}
-.home-dino-icon .dino-nose{fill:#ef792f}
-.home-dino-icon .dino-teeth{fill:none;stroke:#8b6a43;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
-.home-dino-icon .dino-bone-hole{fill:none;stroke:#c29b65;stroke-width:2.5;stroke-linecap:round}
+.home-card-icon{display:flex;align-items:center;justify-content:center;width:78px;height:48px;font-size:34px;line-height:1}
+.home-dino-icon{display:block;width:72px;height:48px;object-fit:cover;object-position:center;filter:drop-shadow(0 2px 0 rgba(91,62,33,.14))}
 .card-dig{background:#e9f4f0;border-color:#a8cfc4}
 .card-train{background:#fff3e2;border-color:#e8bf88}
 .home-stars{margin:9px 0 0;text-align:center}
