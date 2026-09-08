@@ -171,6 +171,38 @@ check("はじまりの絵が ひとりでに引く（押さなくても消える
 await sleep(400);
 
 /* ================= 1. ホームと 50音表 ================= */
+const socialMeta = await page.evaluate(async () => {
+  const content = (selector) => document.querySelector(selector)?.getAttribute("content") || "";
+  const imageUrl = content('meta[property="og:image"]');
+  const imageRes = await fetch("assets/ogp.jpg");
+  const bitmap = imageRes.ok ? await createImageBitmap(await imageRes.blob()) : null;
+  const result = {
+    title: content('meta[property="og:title"]'),
+    description: content('meta[property="og:description"]'),
+    url: content('meta[property="og:url"]'),
+    imageUrl,
+    metaWidth: Number(content('meta[property="og:image:width"]')),
+    metaHeight: Number(content('meta[property="og:image:height"]')),
+    twitterCard: content('meta[name="twitter:card"]'),
+    twitterImage: content('meta[name="twitter:image"]'),
+    imageOk: imageRes.ok,
+    width: bitmap?.width || 0,
+    height: bitmap?.height || 0
+  };
+  if (bitmap) bitmap.close();
+  return result;
+});
+check("OGPとXの共有情報がそろっている",
+  !!socialMeta.title && !!socialMeta.description &&
+  socialMeta.url === "https://yokobo103.github.io/nazotte_dinosaur/" &&
+  socialMeta.imageUrl === "https://yokobo103.github.io/nazotte_dinosaur/assets/ogp.jpg" &&
+  socialMeta.twitterCard === "summary_large_image" && socialMeta.twitterImage === socialMeta.imageUrl,
+  `${socialMeta.title} / ${socialMeta.twitterCard}`);
+check("OGP画像が1200x630で読み込める",
+  socialMeta.imageOk && socialMeta.width === 1200 && socialMeta.height === 630 &&
+  socialMeta.metaWidth === socialMeta.width && socialMeta.metaHeight === socialMeta.height,
+  `画像${socialMeta.width}x${socialMeta.height} / メタ${socialMeta.metaWidth}x${socialMeta.metaHeight}`);
+
 // ホームに50音表は無い。表は「はっくつれんしゅう」ページへ移した（2026-09-02）
 const homeShape = await page.evaluate(() => {
   const r = (s)=> { const e = document.querySelector(s); return e ? e.getBoundingClientRect() : null; };
