@@ -16,6 +16,8 @@ const D0      = 8;    // 点数の物差し。手本から平均でこれだけ�
                       // （109の字の中で平均8ずれる＝画面で25pxくらい。かなりガタガタ）
 const MIN_LEN = 6;    // これより短い線はタップとみなして黙って捨てる
 const MIN_STEP = 0.8; // 記録する点の間引き（109基準）
+const REJOIN_MS = 650; // 指が一瞬離れたあと、同じ1画へ戻れる時間
+const REJOIN_R  = 14;  // 最後の位置からこの距離以内なら線をつなぐ（109基準）
 
 // 合格ライン。どれか1つでも切ったら やりなおし（理由を返す）
 const PASS  = { coverage: 0.70, onPath: 0.45, order: 0.50, flow: 10 };
@@ -66,6 +68,7 @@ export class Tracer {
   }
 
   reset(){
+    this._clearRejoin();
     for (const s of this.strokes){ s.ink = null; s.score = 0; }
     this.cur = 0;         // いま何画目
     this.ink = null;      // いま書いている線
@@ -109,10 +112,18 @@ export class Tracer {
       // 2本目の指や手のひらは無視する。書きかけの線が乗っ取られると
       // 「書いたのに消えた」になって、子どもには理由が分からない
       if (this.pointer !== null) return;
+      const p = this.toVB(e);
       this.lastPointerType = e.pointerType;   // 検査用（指かマウスか）
       this.cv.setPointerCapture(e.pointerId);
       this.pointer = e.pointerId;
-      this.ink = [this.toVB(e)];
+      if (this._tryRejoin(p)){
+        this.ghost = null;
+        this.lastAdvance = performance.now();
+        this.hint = 0;
+        e.preventDefault();
+        return;
+      }
+      this.ink = [p];
       this.ghost = null;
       this.reach = 0;
       this.lastAdvance = performance.now();
@@ -128,13 +139,26 @@ export class Tracer {
     const up = (e)=>{
       if (this.pointer !== e.pointerId) return;
       this.pointer = null;
+      // 正しく書き終えた線はすぐ採点する。不合格候補のタッチはいったん待つ。
+      // 短い画では途中でも終点の許容半径へ入って reason が shape になることがあるため、
+      // 理由では絞らず、近くへ置き直したかどうかで「指が浮いた」を見分ける。
+      const s = this.strokes[this.cur];
+      const res = s && this.ink ? this.score(this.ink, s) : null;
+      if (e.pointerType === "touch" && res && !res.ok){
+        this._holdForRejoin("judge");
+        return;
+      }
       this._judge();
     };
     // 電話の着信やシステムのジェスチャで取り上げられただけ。
-    // 書き終わったわけではないので、採点も注意もしない
+    // 書き終わったわけではないので、近くへ戻れば続行し、戻らなければ黙って捨てる
     const cancel = (e)=>{
       if (this.pointer !== e.pointerId) return;
       this.pointer = null;
+      if (e.pointerType === "touch" && this.ink){
+        this._holdForRejoin("discard");
+        return;
+      }
       this.ink = null;
     };
     this.cv.addEventListener("pointerdown", down);
@@ -142,6 +166,51 @@ export class Tracer {
     this.cv.addEventListener("pointerup", up);
     this.cv.addEventListener("pointercancel", cancel);
     this.cv.addEventListener("touchstart", e=>e.preventDefault(), {passive:false});
+  }
+
+  _clearRejoin(){
+    if (this.rejoinTimer) clearTimeout(this.rejoinTimer);
+    this.rejoinTimer = null;
+    this.rejoinUntil = 0;
+    this.rejoinAction = null;
+  }
+
+  _holdForRejoin(action){
+    this._clearRejoin();
+    this.rejoinAction = action;
+    this.rejoinUntil = performance.now() + REJOIN_MS;
+    this.rejoinTimer = setTimeout(()=>{
+      const pending = this.rejoinAction;
+      this._clearRejoin();
+      if (this.pointer !== null) return;
+      if (pending === "judge") this._judge();
+      else this.ink = null;
+    }, REJOIN_MS);
+  }
+
+  _tryRejoin(p){
+    if (!this.rejoinTimer || !this.ink) return false;
+    if (performance.now() > this.rejoinUntil){
+      const pending = this.rejoinAction;
+      this._clearRejoin();
+      if (pending === "judge") this._judge();
+      else this.ink = null;
+      return false;
+    }
+    const last = this.ink[this.ink.length - 1];
+    if (dist2(p.x, p.y, last.x, last.y) <= REJOIN_R * REJOIN_R){
+      this._clearRejoin();
+      this._record(p);
+      return true;
+    }
+
+    // 離れた場所へ触れたなら前の線は継続ではない。保留していた扱いを確定し、
+    // 今回のタッチは新しい書き直しとしてそのまま受け付ける。
+    const pending = this.rejoinAction;
+    this._clearRejoin();
+    if (pending === "judge") this._judge();
+    else this.ink = null;
+    return false;
   }
 
   _record(p){

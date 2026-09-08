@@ -32,6 +32,39 @@ async function touchTrace(page, pts) {
   await cdp.detach();
 }
 
+// 1画の途中で指が一瞬浮き、ほぼ同じ場所へ置き直して続きをなぞる。
+async function touchTraceWithBriefLift(page, pts, gapMs = 100) {
+  const cdp = await page.target().createCDPSession();
+  const send = (type, list) => cdp.send("Input.dispatchTouchEvent", {
+    type, touchPoints: list.map(p => ({ x: p.x, y: p.y, id: p.id, radiusX: 12, radiusY: 12, force: 1 }))
+  });
+  const half = Math.max(2, Math.floor(pts.length / 2));
+  const A = (p) => ({ ...p, id: 1 });
+  const B = (p) => ({ ...p, id: 2 });
+
+  await send("touchStart", [A(pts[0])]);
+  for (const p of pts.slice(1, half + 1)) await send("touchMove", [A(p)]);
+  await send("touchEnd", []);
+  await sleep(gapMs);
+  await send("touchStart", [B(pts[half])]);
+  for (const p of pts.slice(half + 1)) await send("touchMove", [B(p)]);
+  await send("touchEnd", []);
+  await cdp.detach();
+}
+
+// 途中で離したまま戻らない。継続猶予の時間切れを確かめるために使う。
+async function touchTraceUntilLift(page, pts) {
+  const cdp = await page.target().createCDPSession();
+  const send = (type, list) => cdp.send("Input.dispatchTouchEvent", {
+    type, touchPoints: list.map((p, i) => ({ x: p.x, y: p.y, id: i, radiusX: 12, radiusY: 12, force: 1 }))
+  });
+  const half = Math.max(2, Math.floor(pts.length / 2));
+  await send("touchStart", [pts[0]]);
+  for (const p of pts.slice(1, half + 1)) await send("touchMove", [p]);
+  await send("touchEnd", []);
+  await cdp.detach();
+}
+
 // 2本指：1本目でなぞっている途中に、手のひら（2本目）が触れて、先に離れる。
 // CDPの touchPoints は「いま触れている点ぜんぶ」。減らすと touchEnd 相当になる。
 async function touchTraceWithSecondFinger(page, pts, palm) {
@@ -234,6 +267,33 @@ for (const d of DEVICES) {
     `${st.cur}/${st.total}画 平均${Math.round(st.scores.reduce((a,b)=>a+b,0)/st.total)}点`);
   check(d.name, "指の入力として扱われている", st.pointerType === "touch", `pointerType=${st.pointerType}`);
   await page.screenshot({ path: path.join(QA, `${slug}_2_trace.png`) });
+
+  /* --- 指が一瞬離れても、近くへ置き直せば同じ1画として続くか --- */
+  await page.evaluate(() => window.__nazorin.openChar("い"));
+  await sleep(300);
+  const liftedPts = await strokePts(page, 0, 3);
+  await touchTraceWithBriefLift(page, liftedPts);
+  await sleep(200);
+  const rejoined = await page.evaluate(() => {
+    const t = window.__nazorin.tracer;
+    return { cur: t.cur, reason: t.lastResult && t.lastResult.reason, ok: t.lastResult && t.lastResult.ok };
+  });
+  check(d.name, "途中で指が一瞬離れても つづきから書ける", rejoined.cur === 1 && rejoined.ok === true,
+    `cur=${rejoined.cur} 理由=${rejoined.reason || "なし"}`);
+
+  // 1台で時間切れも確認する。途中線がいつまでも残る不具合を防ぐ。
+  if (d === DEVICES[0]){
+    await page.evaluate(() => window.__nazorin.openChar("い"));
+    await sleep(200);
+    await touchTraceUntilLift(page, await strokePts(page, 0, 3));
+    await sleep(850);
+    const timedOut = await page.evaluate(() => {
+      const t = window.__nazorin.tracer;
+      return { cur: t.cur, ink: t.ink, reason: t.lastResult && t.lastResult.reason };
+    });
+    check(d.name, "途中で離したままなら 猶予のあとやりなおし", timedOut.cur === 0 && timedOut.ink === null && !!timedOut.reason,
+      `cur=${timedOut.cur} 理由=${timedOut.reason || "なし"}`);
+  }
 
   /* --- 手のひらが触れても壊れないか --- */
   await page.evaluate(() => window.__nazorin.openChar("い"));
