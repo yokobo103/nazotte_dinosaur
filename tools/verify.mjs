@@ -158,8 +158,14 @@ const page = await browser.newPage();
 await page.setViewport({ width: 375, height: 812, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
 
 const errors = [];
+let offlineCheckActive = false;
 page.on("pageerror", e => errors.push(String(e)));
-page.on("console", m => { if (m.type() === "error") errors.push(m.text()); });
+page.on("console", m => {
+  // The external analytics script is unavailable during the offline check.
+  if (offlineCheckActive && /^https?:\/\/gc\.zgo\.at\/count\.js$/.test(m.location().url || "")
+      && m.text() === "Failed to load resource: net::ERR_INTERNET_DISCONNECTED") return;
+  if (m.type() === "error") errors.push(m.text());
+});
 page.on("response", r => { if (r.status() >= 400) errors.push(r.status() + " " + r.url()); });
 
 await page.goto(URL, { waitUntil: "networkidle0" });
@@ -1277,6 +1283,7 @@ const cached = await page.evaluate(async () => {
 });
 check("アプリ一式がキャッシュされる", cached.n >= 35, `${cached.n}件 (${cached.name})`);
 
+offlineCheckActive = true;
 await page.setOfflineMode(true);
 await page.reload({ waitUntil: "domcontentloaded" });
 await sleep(1200);
@@ -1293,6 +1300,7 @@ check("電波が無くても ひらける（れんしゅうの表・ロゴまで
   `${offlineView.cells}マス / ${offlineView.title}`);
 await shot(page, "17_offline.png");
 await page.setOfflineMode(false);
+offlineCheckActive = false;
 
 check("JSエラー・404なし", errors.length === 0, errors.slice(0, 3).join(" | "));
 
